@@ -1,22 +1,53 @@
-\documentclass{report}
+\documentclass[a4paper]{report}
+%\usepackage{fullpage}
+
 \begin{document}
 
 \title{Lazy functional programming language targeting Low Level Virtual Machine}
-\author{\emph{Author:}\\Piotr Kaleta}
-%    Supervisor\\dr W\l{}odzimierz Moczurad}
+\author{\emph{Author:}\\Piotr Micha\l{}Kaleta\\\\\emph{Supervisor:}\\dr W\l{}odzimierz Moczurad}
 \date{\today}
 
 \maketitle
+\pagenumbering{roman}
 
-\cleardoublepage
+\newpage
+\thispagestyle{empty}
+\mbox{}
 
+\Huge
 \begin{abstract}
+\normalsize
+\center
+This paper describes the design and Haskell implementation of a lazy
+programming language called Kivi. It is higly influenced on both Haskell's
+syntax as well as the way that computations are performed. However it generates
+the \emph{Low Level Virtual Machine}\cite{wiki:llvm} Intermediate
+Representation code as the output, which is then assembled and compiled to
+native code by LLVM.
 \end{abstract}
+
+
+\renewcommand{\abstractname}{Acknowledgements}
+\begin{abstract}
+\normalsize
+\center
+First of all I'd like to thank all members of my family. They have always
+helped me and stood beside me.
+\begin{flushright}
+Piotr Kaleta
+\end{flushright}
+\end{abstract}
+
+\normalsize
+\pagenumbering{arabic}
 
 \tableofcontents
 
+\chapter{Introduction}
+
 \section{Section Headings}
 
+Creating footnotes is easy\footnote{Example footnote}
 We explain in this section how to obtain headings
 for the various sections and subsections of our
 document.
@@ -27,4 +58,5 @@ In the `article' style, the document may be divided up
 into sections, subsections and subsubsections, and each
 can be given a title, printed in a boldface font, simply by issuing the
 appropriate command.
+
 \end{document}
