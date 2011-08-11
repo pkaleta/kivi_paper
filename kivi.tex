@@ -69,16 +69,36 @@ Piotr Kaleta
 
 \chapter{Introduction}
 
+This paper describes the design and implementation of a lazy functional
+language compiler. The implementation is based on the
+\textit{G-machine}\cite{jones87} and uses \textit{lazy graph reduction} to
+perform evaluation.
+
+The compilation process is implemented as a set of passes that eventually
+transforms the source code into simple intermediate language \textit{lambda
+calculus} enriched with let(rec) expressions. In the following chapters I
+am going to describe the process of translating this simple intermediate
+language further into \textit{G-code} instructions. Finally these
+instructions will either be evaluated by the interpreter or compiled down
+to LLVM intermediate representation and further to native code by LLVM
+infrastructure compilers. Design and implementation of both of these concepts
+will be described in separate chapters.
+
+\section{Compilation phases}
+
+
+
 \section{Syntax}
-Source of Kivi's program consists of set of
+We begin by presenting the basic syntax of \textit{Kivi}.
+Source of \textit{Kivi}'s program consist of set of
 \textit{supercombinators}\cite{wiki:supercombinator}. Supercombinator is an
 expression consisting of either constants or other supercombinators that
 doesn't contain any free variables in its body. Supercombinators might have
 arguments, and those which doesn't are called \textit{constant applicative forms}
-(or CAFs for short). Listing~\ref{simplesc} shows the simple
-supercombinator with arguments.
+(or CAFs for short). Listing~\ref{supercombinator_ex} shows the simple
+supercombinator with one argument.
 
-\begin{lstlisting}[label=simplesc,caption={Simple supercombinator.}]
+\begin{lstlisting}[label=supercombinator_ex,caption={Simple supercombinator.}]
 sqr x = x * x
 \end{lstlisting}
 
@@ -87,12 +107,31 @@ arguments. It is the entry point for program execution. If there's no
 \textit{main} CAF present in Kivi's source, both compiler and interpreter
 should issue specific error message.
 
+\subsection{Case expressions}
+The purpose of case expression is to allow the programmer to control the flow
+of program execution via a multiway branch. The semantics of case is rather
+simple. First, the expression under case is evaluated and then based on result,
+the appriopriate execution path is chosen. Example of case expression is
+presented in Listing~\ref{case_ex}.
+
+\begin{lstlisting}[label=case_ex,caption={Fibonacci with case}]
+fib n =
+    case n of
+        0 -> 1;
+        1 -> 1;
+        n -> fib (n-1) + fib (n-2);
+
+main = fib 10
+\end{lstlisting}
+
 \subsection{Local bindings}
-Supercombinators provides the ability to define local definitions using \texttt{let} keyword.
-The example use of local binding is presented in Listing~\ref{let}
+Supercombinators provides the ability to define local definitions using
+\texttt{let} keyword. The scope of variables defined using \texttt{let} is
+enclosed by the expression following \texttt{in} keyword. The example use of
+local binding is presented in Listing~\ref{let_ex}
 
 
-\begin{lstlisting}[label=let,caption={Local \texttt{let} binding.}]
+\begin{lstlisting}[label=let_ex,caption={Local \texttt{let} binding.}]
 sum x y = x + y;
 
 main =
@@ -104,10 +143,10 @@ main =
 
 \subsection{Recursive local bindings}
 In order to define mutually recursive bindings using \texttt{let} one has to use the
-special \texttt{letrec} construct as shown in Listing~\ref{factorial_letrec}
+special \texttt{letrec} construct as shown in Listing~\ref{factorial_letrec_ex}
 
 
-\begin{lstlisting}[label=factorial_letrec,caption={Factorial function using \texttt{letrec}.}]
+\begin{lstlisting}[label=factorial_letrec_ex,caption={Factorial function using \texttt{letrec}.}]
 sum x y = x + y;
 
 main =
@@ -122,18 +161,82 @@ main =
 \subsection{Where clauses}
 Another way of creating recursive definitions is using the \texttt{where}
 clause. Internally it will be translated into letrec binding. Example use of
-\texttt{where} clause is shown in Listing~\ref{factorial_where}
+\texttt{where} clause is shown in Listing~\ref{factorial_where_ex}
 
-
-\begin{lstlisting}[label=factorial_where,caption={Factorial function using \texttt{where}.}]
+\begin{lstlisting}[label=factorial_where_ex,caption={Factorial function using \texttt{where}.}]
 main = fac 5
     where
         fac n = case n == 0 of
             True -> 1;
-            False -> n * fac (n-1)
+            False -> n * fac (n - 1)
 \end{lstlisting}
 
-\section{Section Headings}
+\subsection{Lambda abstractions}
+Functions in Kivi can be defined in two ways. The first one is the top level
+supercombinators that has already been discussed. The other option is to define
+them as \textit{lambda abstractions}. This concept is similar to \textit{anonymous
+functions} used in imperative languages. The syntax for defining lambda
+abstractions is presented in Listing~\ref{lambda_ex}.
+
+\begin{lstlisting}[label=lambda_ex,caption={Lambda abstraction}]
+f = (\x . x * 2) 42
+\end{lstlisting}
+
+In this example the lambda abstraction which doubles the arguments value is
+created and then applied to 42 yielding 84 as result.
+
+During compilation process programs containing lambda abstractions are
+transformed into their equivalents with lambda abstractions substituted for top
+level supercombinators. This process is called \textit{lambda lifting} and is
+described in more detail in chapter~\ref{lambda_lifting}.
+
+\subsection{Pattern matching}
+
+Pattern matching consists of specifying patterns to which some data should
+conform and then checking to see if it does, as well as deconstructing the data
+according to those patterns. So in other words, using pattern matching you can
+recognize values, bind variables to those values and break structures down into
+parts.
+Patterns are matched in order they are defined in source code. Once a
+successful branch is found, the right-hand-side expression is evaluated and
+result returned. None of the following patterns is checked. If after checking
+all patterns it turns out that none of them matches the argument, the error is
+returned.
+
+\begin{lstlisting}[label=pattern_matching_ex,caption={Factorial using pattern matching.}]
+fac 0 = 1
+fac n = n * fac (n - 1)
+\end{lstlisting}
+
+In Listing~\ref{pattern_matching_ex} a recursive supercombinator \texttt{fac}
+calculating factorial is defined. There are two cases\footnote{To be honest
+there are three cases, but for simplicity reasons we assume that
+\texttt{fac} is called only for non-negative integers}. Either the
+argument is 0 and then the result is 1, or argument is other than than 0 and
+then we progress recursively. The factorial definition is expressed very
+clearly by means of pattern matching.
+Pattern matching is also very useful when it comes to dealing with data
+types as we'll see in next section.
+
+\subsection{Data Types}
+Data types in Kivi are defined using \texttt{data} keyword, giving the name of
+new type as well as its constructors and their arities. Together with pattern matching they
+provide a very powerful mechanism for dealing with structured objects.
+
+\begin{lstlisting}[label=data_type_ex,caption={Calculating length of list.}]
+data List = Nil 0 | Cons 2;
+
+length Nil = 0;
+length (Cons x xs) = 1 + length xs
+\end{lstlisting}
+
+In Listing~\ref{data_type_ex} a data type \texttt{List} is declared as well as
+supercombinator calculating the length of a list by means of pattern matching.
+In first case argument is pattern matched to the \texttt{Nil} constructor. If
+matching succeeds it means that the list is empty, therefore its length is 0.
+In next case the argument is matched to second \texttt{List} constructor, that
+is \texttt{Cons}. If argument matches the \textit{tail} of the list is bound to
+\texttt{xs} variable and right hand side of that branch is evaluated.
 
 Creating footnotes is easy\footnote{Example footnote}
 We explain in this section how to obtain headings
@@ -146,5 +249,14 @@ In the `article' style, the document may be divided up
 into sections, subsections and subsubsections, and each
 can be given a title, printed in a boldface font, simply by issuing the
 appropriate command.
+
+\begin{thebibliography}{9}
+
+\bibitem{jones87}
+  Simon L. Peyton Jones,
+    \emph{The Implementation of Functional Programming Languages}.
+      Prentice Hall, London, 1987.
+
+\end{thebibliography}
 
 \end{document}
