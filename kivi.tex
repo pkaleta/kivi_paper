@@ -101,26 +101,60 @@ In order to translate the source of \textit{Kivi} into \textit{Lambda Calculus}
 it has to be available in a structured form so thate later passes could easily
 traverse it. \textit{Abstract Syntax Trees}\cite{wiki:ast} has been widely adopted as a
 standard form of keeping the representation of source code in memory. The
-process of reading the input source file and producing tht AST is called
+process of reading the input source file and producing AST from it is called
 \textit{parsing}.
 I've chosen to implement a simple parser, in a similar manner as in
 \cite{joneslester00} as it seemed as the simplest approach to me then. Now, as
 the parser has grown, I'd strongly consider rewriting it to use parser combinator
-library such as \cite{website:parsec} instead.
-The parsing consists of two passes. As previously mentioned such separation
-makes implementation and reading the code easier. Thus parsing consist
-of:
+library such as \cite{website:parsec} instead.  The parsing consists of two
+passes. As previously mentioned such separation makes implementation and
+reading the code easier. Thus parsing consist of:
+
 \begin{itemize}
-  \item The first item
-  \item The second item
-  \item The third etc \ldots
+  \item Firstly \textit{lexical analysis} implemented by \texttt{lex} in
+    \texttt{Lexer.hs} module extracts \textit{tokens} from plain text.
+    \textit{Tokenization} is the process of demarcating and possibly
+    classifying sections of a string of input characters. The resulting tokens
+    are then passed on to further processing.
+  \item \textit{Syntax analysis} is the process of analyzing the stream of
+    tokens and building an \textit{Abstract Syntax Tree} from it.
 \end{itemize}
 
+TODO: Grammar of the language
+
+This two-phase process is implemented as\footnote{Where \texttt{PatProgram}
+is program containing patterns}:
 \begin{verbatim}
 parse :: String -> PatProgram
 parse = syntax . lex
 \end{verbatim}
 
+\section{Lexical analysis}
+
+The types for lexer are following:
+\begin{verbatim}
+type Token = String
+type TokenInfo = (Int, Token)
+\end{verbatim}
+Where \texttt{TokenInfo} consist of line number and a token string itself.
+
+The heart of \textit{lexical analyser} is the \texttt{lex'} function. It works
+by classifying the parts of remaining input based on first characters.
+Building number tokens may be a nice example of how it works:
+
+\begin{lstlisting}[label=lex_comment,caption={Building tokens from numbers.}]
+lex' (c : cs) lnum | isDigit c =
+    (lnum, numToken) : lex' restCs lnum
+        where
+        numToken = c : takeWhile isDigit cs
+        restCs = dropWhile isDigit cs
+\end{lstlisting}
+
+
+\section{Syntax analysis}
+qwfofqw
+efeqw
+f
 
 \chapter{Translation to Lambda Calculus}
 
