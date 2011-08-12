@@ -2,28 +2,29 @@
 %\usepackage{fullpage}
 \usepackage{listings}
 \usepackage{caption}
+\usepackage{url}
 %\usepackage{courier}
 
 \begin{document}
 
 \lstset{ %
-    language=Haskell,               % the language of the code
-    basicstyle=\ttfamily,       % the size of the fonts that are used for the code
-    numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
-    stepnumber=2,                   % the step between two line-numbers. If it's 1, each line 
-    % will be numbered
-    numbersep=5pt,                  % how far the line-numbers are from the code
-    showspaces=false,               % show spaces adding particular underscores
-    showstringspaces=false,         % underline spaces within strings
-    showtabs=false,                 % show tabs within strings adding particular underscores
-    tabsize=2,                      % sets default tabsize to 2 spaces
-    captionpos=b,                   % sets the caption-position to bottom
-    breaklines=true,                % sets automatic line breaking
-    xleftmargin=30pt,
-    breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
-    title=\lstname,                 % show the filename of files included with \lstinputlisting;
-    escapeinside={\%*}{*)},         % if you want to add a comment within your code
-    morekeywords={*,...}            % if you want to add more keywords to the set
+language=Haskell,               % the language of the code
+basicstyle=\ttfamily,       % the size of the fonts that are used for the code
+numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+stepnumber=2,                   % the step between two line-numbers. If it's 1, each line 
+% will be numbered
+numbersep=5pt,                  % how far the line-numbers are from the code
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+tabsize=2,                      % sets default tabsize to 2 spaces
+captionpos=b,                   % sets the caption-position to bottom
+breaklines=true,                % sets automatic line breaking
+xleftmargin=30pt,
+breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+title=\lstname,                 % show the filename of files included with \lstinputlisting;
+escapeinside={\%*}{*)},         % if you want to add a comment within your code
+morekeywords={*,...}            % if you want to add more keywords to the set
 }
 
 
@@ -40,26 +41,26 @@
 
 \Huge
 \begin{abstract}
-\normalsize
-\center
-This paper describes the design and Haskell implementation of a lazy
-programming language called Kivi. It is higly influenced on both Haskell's
-syntax as well as the way that computations are performed. However it generates
-the \textit{Low Level Virtual Machine}\cite{wiki:llvm} Intermediate
-Representation code as the output, which is then assembled and compiled to
-native code by LLVM.
+  \normalsize
+  \center
+  This paper describes the design and Haskell implementation of a lazy
+  programming language called Kivi. It is higly influenced on both Haskell's
+  syntax as well as the way that computations are performed. However it generates
+  the \textit{Low Level Virtual Machine}\cite{website:llvm} Intermediate
+  Representation code as the output, which is then assembled and compiled to
+  native code by LLVM.
 \end{abstract}
 
 
 \renewcommand{\abstractname}{Acknowledgements}
 \begin{abstract}
-\normalsize
-\center
-First of all I'd like to thank all members of my family. They have
-always helped me and stood beside me.
-\begin{flushright}
-Piotr Kaleta
-\end{flushright}
+  \normalsize
+  \center
+  First of all I'd like to thank all members of my family. They have
+  always helped me and stood beside me.
+  \begin{flushright}
+    Piotr Kaleta
+  \end{flushright}
 \end{abstract}
 
 \normalsize
@@ -76,30 +77,71 @@ perform evaluation.
 
 The compilation process is implemented as a set of passes that eventually
 transforms the source code into simple intermediate language \textit{lambda
-calculus} enriched with let(rec) expressions. In the following chapters I
-am going to describe the process of translating this simple intermediate
-language further into \textit{G-code} instructions. Finally these
-instructions will either be evaluated by the interpreter or compiled down
-to LLVM intermediate representation and further to native code by LLVM
+calculus} enriched with let(rec) expressions. It would be possible to implement
+compiler using less passes than I did, or maybe even one, but such clear
+separation made things simpler to both develop and debug as well. Besides now
+the compiler is very modular and inserting additional passes could be done with
+no harm, which wouldn't be that easy if I'd used one pass only instead.
+
+
+In following chapters I am going to describe the process of translating
+\textit{Lambda Calculus} into \textit{G-code} instructions.  Finally these
+instructions will either be evaluated by the interpreter or compiled down to
+LLVM intermediate representation and further to native code by LLVM
 infrastructure compilers. Design and implementation of both of these concepts
 will be described in separate chapters.
 
-\section{Compilation phases}
+TODO: Opis po kolei czesci dokumentu
+
+\section{Implementation language - Haskell}
+
+\chapter{Parsing}
+
+In order to translate the source of \textit{Kivi} into \textit{Lambda Calculus}
+it has to be available in a structured form so thate later passes could easily
+traverse it. \textit{Abstract Syntax Trees}\cite{wiki:ast} has been widely adopted as a
+standard form of keeping the representation of source code in memory. The
+process of reading the input source file and producing tht AST is called
+\textit{parsing}.
+I've chosen to implement a simple parser, in a similar manner as in
+\cite{joneslester00} as it seemed as the simplest approach to me then. Now, as
+the parser has grown, I'd strongly consider rewriting it to use parser combinator
+library such as \cite{website:parsec} instead.
+The parsing consists of two passes. As previously mentioned such separation
+makes implementation and reading the code easier. Thus parsing consist
+of:
+\begin{itemize}
+  \item The first item
+  \item The second item
+  \item The third etc \ldots
+\end{itemize}
+
+\begin{verbatim}
+parse :: String -> PatProgram
+parse = syntax . lex
+\end{verbatim}
 
 
+\chapter{Translation to Lambda Calculus}
+
+In this chapter I'm going to present the process of transformation of a
+high-level functional language into a simple intermediate form - \textit{lambda
+calculus}. In the first part I'll show \textit{Kivi}'s syntax, its
+constructs and structures. Later on the desired output form -
+\textit{Lambda Calculus} will be shown. The rest of the chapter will
+consist of ways to translate the first form into another.
 
 \section{Syntax}
-We begin by presenting the basic syntax of \textit{Kivi}.
 Source of \textit{Kivi}'s program consist of set of
 \textit{supercombinators}\cite{wiki:supercombinator}. Supercombinator is an
-expression consisting of either constants or other supercombinators that
+expression consisting of either constants or other supercombinators and
 doesn't contain any free variables in its body. Supercombinators might have
 arguments, and those which doesn't are called \textit{constant applicative forms}
 (or CAFs for short). Listing~\ref{supercombinator_ex} shows the simple
 supercombinator with one argument.
 
 \begin{lstlisting}[label=supercombinator_ex,caption={Simple supercombinator.}]
-sqr x = x * x
+  sqr x = x * x
 \end{lstlisting}
 
 There is one special supercombinator called \textit{main}, that takes no
@@ -115,13 +157,13 @@ the appriopriate execution path is chosen. Example of case expression is
 presented in Listing~\ref{case_ex}.
 
 \begin{lstlisting}[label=case_ex,caption={Fibonacci with case}]
-fib n =
-    case n of
-        0 -> 1;
-        1 -> 1;
-        n -> fib (n-1) + fib (n-2);
+  fib n =
+  case n of
+  0 -> 1;
+  1 -> 1;
+  n -> fib (n-1) + fib (n-2);
 
-main = fib 10
+  main = fib 10
 \end{lstlisting}
 
 \subsection{Local bindings}
@@ -132,13 +174,13 @@ local binding is presented in Listing~\ref{let_ex}
 
 
 \begin{lstlisting}[label=let_ex,caption={Local \texttt{let} binding.}]
-sum x y = x + y;
+  sum x y = x + y;
 
-main =
-    let x = 1
-        y = 2
-    in
-        sum x y
+  main =
+  let x = 1
+  y = 2
+  in
+  sum x y
 \end{lstlisting}
 
 \subsection{Recursive local bindings}
@@ -147,15 +189,15 @@ special \texttt{letrec} construct as shown in Listing~\ref{factorial_letrec_ex}
 
 
 \begin{lstlisting}[label=factorial_letrec_ex,caption={Factorial function using \texttt{letrec}.}]
-sum x y = x + y;
+  sum x y = x + y;
 
-main =
-    letrec fac n =
-        case n == 0 of
-            True -> 1;
-            False -> n * fac (n-1)
-    in
-        fac 5
+  main =
+  letrec fac n =
+  case n == 0 of
+  True -> 1;
+  False -> n * fac (n-1)
+  in
+  fac 5
 \end{lstlisting}
 
 \subsection{Where clauses}
@@ -164,11 +206,11 @@ clause. Internally it will be translated into letrec binding. Example use of
 \texttt{where} clause is shown in Listing~\ref{factorial_where_ex}
 
 \begin{lstlisting}[label=factorial_where_ex,caption={Factorial function using \texttt{where}.}]
-main = fac 5
-    where
-        fac n = case n == 0 of
-            True -> 1;
-            False -> n * fac (n - 1)
+  main = fac 5
+  where
+  fac n = case n == 0 of
+  True -> 1;
+  False -> n * fac (n - 1)
 \end{lstlisting}
 
 \subsection{Lambda abstractions}
@@ -179,7 +221,7 @@ functions} used in imperative languages. The syntax for defining lambda
 abstractions is presented in Listing~\ref{lambda_ex}.
 
 \begin{lstlisting}[label=lambda_ex,caption={Lambda abstraction}]
-f = (\x . x * 2) 42
+  f = (\x . x * 2) 42
 \end{lstlisting}
 
 In this example the lambda abstraction which doubles the arguments value is
@@ -204,8 +246,8 @@ all patterns it turns out that none of them matches the argument, the error is
 returned.
 
 \begin{lstlisting}[label=pattern_matching_ex,caption={Factorial using pattern matching.}]
-fac 0 = 1
-fac n = n * fac (n - 1)
+  fac 0 = 1
+  fac n = n * fac (n - 1)
 \end{lstlisting}
 
 In Listing~\ref{pattern_matching_ex} a recursive supercombinator \texttt{fac}
@@ -224,10 +266,10 @@ new type as well as its constructors and their arities. Together with pattern ma
 provide a very powerful mechanism for dealing with structured objects.
 
 \begin{lstlisting}[label=data_type_ex,caption={Calculating length of list.}]
-data List = Nil 0 | Cons 2;
+  data List = Nil 0 | Cons 2;
 
-length Nil = 0;
-length (Cons x xs) = 1 + length xs
+  length Nil = 0;
+  length (Cons x xs) = 1 + length xs
 \end{lstlisting}
 
 In Listing~\ref{data_type_ex} a data type \texttt{List} is declared as well as
@@ -243,6 +285,12 @@ We explain in this section how to obtain headings
 for the various sections and subsections of our
 document.
 
+\section{Lambda Calculus}
+
+\section{Translation to Lambda Calculus}
+
+
+
 \subsection{Headings in the `article' Document Style}
 
 In the `article' style, the document may be divided up
@@ -250,13 +298,7 @@ into sections, subsections and subsubsections, and each
 can be given a title, printed in a boldface font, simply by issuing the
 appropriate command.
 
-\begin{thebibliography}{9}
-
-\bibitem{jones87}
-  Simon L. Peyton Jones,
-    \emph{The Implementation of Functional Programming Languages}.
-      Prentice Hall, London, 1987.
-
-\end{thebibliography}
+\bibliographystyle{alpha}
+\bibliography{kivi}
 
 \end{document}
