@@ -1,10 +1,10 @@
 all: kivi.pdf
 
 kivi.pdf: kivi.tex
-	pdflatex kivi.tex
+	pdflatex $<
 	bibtex kivi.aux
-	pdflatex kivi.tex
-	pdflatex kivi.tex
+	pdflatex $<
+	pdflatex $<
 
 
 clean:

@@ -56,8 +56,7 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 \begin{abstract}
   \normalsize
   \center
-  First of all I'd like to thank all members of my family. They have
-  always helped me and stood beside me.
+  TODO: napisac
   \begin{flushright}
     Piotr Kaleta
   \end{flushright}
@@ -192,10 +191,10 @@ presented in Listing~\ref{case_ex}.
 
 \begin{lstlisting}[label=case_ex,caption={Fibonacci with case}]
   fib n =
-  case n of
-  0 -> 1;
-  1 -> 1;
-  n -> fib (n-1) + fib (n-2);
+      case n of
+          0 -> 1;
+          1 -> 1;
+              n -> fib (n-1) + fib (n-2);
 
   main = fib 10
 \end{lstlisting}
@@ -211,10 +210,10 @@ local binding is presented in Listing~\ref{let_ex}
   sum x y = x + y;
 
   main =
-  let x = 1
-  y = 2
-  in
-  sum x y
+      let x = 1
+          y = 2
+      in
+          sum x y
 \end{lstlisting}
 
 \subsection{Recursive local bindings}
@@ -226,12 +225,12 @@ special \texttt{letrec} construct as shown in Listing~\ref{factorial_letrec_ex}
   sum x y = x + y;
 
   main =
-  letrec fac n =
-  case n == 0 of
-  True -> 1;
-  False -> n * fac (n-1)
-  in
-  fac 5
+      letrec fac n =
+          case n == 0 of
+              True -> 1;
+              False -> n * fac (n-1)
+      in
+          fac 5
 \end{lstlisting}
 
 \subsection{Where clauses}
@@ -241,10 +240,10 @@ clause. Internally it will be translated into letrec binding. Example use of
 
 \begin{lstlisting}[label=factorial_where_ex,caption={Factorial function using \texttt{where}.}]
   main = fac 5
-  where
-  fac n = case n == 0 of
-  True -> 1;
-  False -> n * fac (n - 1)
+      where
+          fac n = case n == 0 of
+              True -> 1;
+              False -> n * fac (n - 1)
 \end{lstlisting}
 
 \subsection{Lambda abstractions}
@@ -311,26 +310,12 @@ supercombinator calculating the length of a list by means of pattern matching.
 In first case argument is pattern matched to the \texttt{Nil} constructor. If
 matching succeeds it means that the list is empty, therefore its length is 0.
 In next case the argument is matched to second \texttt{List} constructor, that
-is \texttt{Cons}. If argument matches the \textit{tail} of the list is bound to
+is \texttt{Cons}. If argument matches, the \textit{tail} of the list is bound to
 \texttt{xs} variable and right hand side of that branch is evaluated.
-
-Creating footnotes is easy\footnote{Example footnote}
-We explain in this section how to obtain headings
-for the various sections and subsections of our
-document.
 
 \section{Lambda Calculus}
 
 \section{Translation to Lambda Calculus}
-
-
-
-\subsection{Headings in the `article' Document Style}
-
-In the `article' style, the document may be divided up
-into sections, subsections and subsubsections, and each
-can be given a title, printed in a boldface font, simply by issuing the
-appropriate command.
 
 \bibliographystyle{alpha}
 \bibliography{kivi}
