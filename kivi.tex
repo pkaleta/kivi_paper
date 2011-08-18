@@ -402,8 +402,11 @@ sqrTree (Branch t1 t2) = Branch (sqrTree t1) (sqrTree t2)
 \end{lstlisting}
 
 \subsubsection{Built-in Data Types}
-There are few types that are considered as built-ins. These are lists, tuples,
-and booleans.
+There are few types that are considered built-ins. These are lists, tuples,
+and booleans. The ability to think of these common concepts in functional
+programming as Structured Data Types makes the implementation straightforward
+as I didn't have to treat these entities separately, instead I used a common
+notion of data types.
 \subsubsection{Booleans}
 Boolean values in Kivi are implemented as a regular Structured Data Type having
 two constructors representing true and false:
@@ -467,10 +470,10 @@ decompose them into parts using pattern matching. Their main usage is when a
 programmer knows in advance how many elements will he need to store.
 
 There is a predefined number of tuple types that you can create, and currently
-the bound is set to 5. This means that programmer is not allowed to create
-tuples that contain more than 5 elements. This design decision is due to the
+the bound is set to 4. This means that programmer is not allowed to create
+tuples that contain more than 4 elements. This design decision is due to the
 fact that from my perspective it's better to use custom Structured Data Type
-for readability reasons. The limit of 5 however, is an experimental value and
+for readability reasons. The limit of 4 however, is an experimental value and
 might be changed.
 
 This all means that tuples with different number of elements are different
@@ -481,7 +484,7 @@ however \texttt{Tuple0}, \texttt{Tuple1}, \ldots etc., representing tuples with
 There are two ways to create a tuple either by using constructors or by a
 special \textit{syntactic sugar} construct, similarly as in the case for lists.
 These two ways for instantiating a 3-element tuple are equivalent, with the
-preference for the second one, due to readability concerns.
+preference for the second one, due to readability concerns:
 
 \begin{verbatim}
   (((Tuple3 1) 2) 3)
@@ -490,6 +493,35 @@ and
 \begin{verbatim}
   (1, 2, 3)
 \end{verbatim}
+
+\subsubsection{Implementation and tagging}
+Internally each data type consist of a list of constructors, each containing a
+\textit{tag}, and \textit{arity}. Constructor tags should uniquely identify
+each constructor therefore each tag should be different. The definitions
+for \texttt{DataType} and \texttt{Constructor} type synonyms, as in
+\textit{Common.hs} are as follows:
+
+\begin{verbatim}
+  type DataType = (Name, [Constructor])
+  type Constructor = (Name, Int, Int)
+\end{verbatim}
+
+Because of the fact that there's no way to know in advance how many data type
+declarations are there in source file I had to devise some way to assign a
+unique tag for each of constructors that is not a built-in one. This is
+precisely what the tagging phase is for. It works in two parts:
+
+\begin{itemize}
+  \item First it traverses the list of data types and its constructors in order
+    to create a mapping between constructor name and its unique tag.
+  \item Next the whole AST is recursively traversed and each
+    \texttt{EConstrName} node is substituted for \texttt{EConstr} containing
+    the previously associated tag and arity.
+\end{itemize}
+
+The definitions for those functionalities has been placed in
+\textit{AbstractDataTypes.hs} file.
+
 
 \subsection{Merging patterns}
 \subsection{Transforming \texttt{let} expressions}
