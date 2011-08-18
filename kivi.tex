@@ -3,6 +3,7 @@
 \usepackage{listings}
 \usepackage{caption}
 \usepackage{url}
+\usepackage{tikz}
 %\usepackage{courier}
 
 \begin{document}
@@ -94,6 +95,7 @@ TODO: Opis po kolei czesci dokumentu
 
 \section{Implementation language - Haskell}
 
+
 \chapter{Parsing}
 
 In order to translate the source of \textit{Kivi} into \textit{Lambda Calculus}
@@ -124,16 +126,16 @@ TODO: Grammar of the language
 This two-phase process is implemented as\footnote{Where \texttt{PatProgram}
 is program containing patterns}:
 \begin{verbatim}
-parse :: String -> PatProgram
-parse = syntax . lex
+  parse :: String -> PatProgram
+  parse = syntax . lex
 \end{verbatim}
 
 \section{Lexical analysis}
 
 The types for lexer are following:
 \begin{verbatim}
-type Token = String
-type TokenInfo = (Int, Token)
+  type Token = String
+  type TokenInfo = (Int, Token)
 \end{verbatim}
 Where \texttt{TokenInfo} consist of line number and a token string itself.
 
@@ -154,6 +156,9 @@ lex' (c : cs) lnum | isDigit c =
 qwfofqw
 efeqw
 f
+TODO: jak powstaje drzewo ast przedstawic tutaj datatype ktory sluzy do
+trzymania ast
+
 
 \chapter{Translation to Lambda Calculus}
 
@@ -187,9 +192,9 @@ The purpose of case expression is to allow the programmer to control the flow
 of program execution via a multiway branch. The semantics of case is rather
 simple. First, the expression under case is evaluated and then based on result,
 the appriopriate execution path is chosen. Example of case expression is
-presented in Listing~\ref{case_ex}.
+presented in Listing~\ref{lst:case_ex}.
 
-\begin{lstlisting}[label=case_ex,caption={Fibonacci with case}]
+\begin{lstlisting}[label=lst:case_ex,caption={Fibonacci with case}]
   fib n =
       case n of
           0 -> 1;
@@ -199,6 +204,7 @@ presented in Listing~\ref{case_ex}.
   main = fib 10
 \end{lstlisting}
 
+% TODO: zmienic \ref{xxx} na \ref{lst:xxx}
 \subsection{Local bindings}
 Supercombinators provides the ability to define local definitions using
 \texttt{let} keyword. The scope of variables defined using \texttt{let} is
@@ -293,10 +299,10 @@ clearly by means of pattern matching.
 Pattern matching is also very useful when it comes to dealing with data
 types as we'll see in next section.
 
-\subsection{Data Types}
+\subsection{Structured Data Types}
 Data types in Kivi are defined using \texttt{data} keyword, giving the name of
-new type as well as its constructors and their arities. Together with pattern matching they
-provide a very powerful mechanism for dealing with structured objects.
+new type as well as its constructors and arities. Together with pattern matching they
+provide a very powerful mechanism for dealing with structured entities.
 
 \begin{lstlisting}[label=data_type_ex,caption={Calculating length of list.}]
   data List = Nil 0 | Cons 2;
@@ -313,9 +319,102 @@ In next case the argument is matched to second \texttt{List} constructor, that
 is \texttt{Cons}. If argument matches, the \textit{tail} of the list is bound to
 \texttt{xs} variable and right hand side of that branch is evaluated.
 
+\subsection{Function application and Currying}
+% TODO: write
 \section{Lambda Calculus}
 
 \section{Translation to Lambda Calculus}
+The process of translating a high-level functional language to \textit{lambda
+calculus} might be considered as a set of program transformations. Each such
+transformation is meant to simplify \footnote{or help with further
+transformations} the program given as its input, eventually leading to the
+expected \textit{enriched lambda calculus} form.
+All those transformations accept some form of the program as input and yield
+the simplified program as output. Therefore we might regard the compilation
+process as a function composition of all transformations. This is exactly the
+way the compilation is implemented in Kivi, and Haskell lets to express this
+in a very concise way:
+
+\begin{verbatim}
+  run :: String -> String
+  run = showResults
+      . eval
+      . compile
+      . lambdaLift
+      . lazyLambdaLift
+      . analyseDeps
+      . transformToLambdaCalculus
+      . mergePatterns
+      . tag
+      . parse
+\end{verbatim}
+
+We have already discussed the parsing in previous chapters, so in the following
+sections I'm going to provide a description of all remaining phases.
+
+\subsection{Structured Data Types and Tagging}
+In order to understand the need for this pass one has to know how structured
+data types and their constructors are represented internally.
+A custom data type declaration in Kivi might look like this one:
+
+\begin{verbatim}
+  data Tree = Leaf 1 | Branch 2
+\end{verbatim}
+
+This statement declares the new data type called \texttt{Tree} which can be
+constructed in two ways. The common way of looking at the constructors is to
+consider them as functions with zero or more arguments that return an instance
+of a data type as a result. The \texttt{Tree} constructor is \texttt{Leaf} and
+it has no further descendants. It takes one argument which is some kind of
+value. The other way to construct a \texttt{Tree} is to create a \texttt{Branch}
+taking two children (which also are \texttt{Tree}s) as arguments. For example,
+conceptual representation of the following tree is shown in Figure~\ref{fig:tree}:
+
+\begin{verbatim}
+  Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))
+\end{verbatim}
+
+\begin{figure}[h!]
+  \centering
+    \begin{tikzpicture}
+      \tikzstyle{every node}=[circle,draw]
+      \node {}
+          child { node {1} }
+          child {
+            node {}
+              child { node {2} }
+              child { node {3} }
+          };
+    \end{tikzpicture}
+  \caption{Example of a tree.}
+  \label{fig:tree}
+\end{figure}
+
+Constructors are used not only for object creation but also for decomposition
+into parts as well as distinguishing the different types of trees based on
+constructor. This feature is heavily used when pattern matching. For example
+the code in Listing~\ref{lst:sqr_tree} uses it to create a new tree with values
+that are square roots of the original tree.
+
+\begin{lstlisting}[label=lst:sqr_tree,caption={Creating a `square rooted` tree.}]
+sqrTree (Leaf v) = Leaf (v * v)
+sqrTree (Branch t1 t2) = Branch (sqrTree t1) (sqrTree t2)
+\end{lstlisting}
+
+
+\subsection{Merging patterns}
+\subsection{Transforming \texttt{let} expressions}
+\subsection{Pattern Matching}
+\subsection{Transforming \texttt{case} expressions}
+\subsection{Dependency analysis}
+\subsection{Lambda lifting}
+\subsection{Lazy lambda lifting}
+
+
+
+\chapter{G-Machine}
+\section{Interpreter}
+\section{LLVM Compiler}
 
 \bibliographystyle{alpha}
 \bibliography{kivi}
