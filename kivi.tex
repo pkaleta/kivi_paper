@@ -394,13 +394,102 @@ Constructors are used not only for object creation but also for decomposition
 into parts as well as distinguishing the different types of trees based on
 constructor. This feature is heavily used when pattern matching. For example
 the code in Listing~\ref{lst:sqr_tree} uses it to create a new tree with values
-that are square roots of the original tree.
+that are square roots of values in original tree.
 
 \begin{lstlisting}[label=lst:sqr_tree,caption={Creating a `square rooted` tree.}]
 sqrTree (Leaf v) = Leaf (v * v)
 sqrTree (Branch t1 t2) = Branch (sqrTree t1) (sqrTree t2)
 \end{lstlisting}
 
+\subsubsection{Built-in Data Types}
+There are few types that are considered as built-ins. These are lists, tuples,
+and booleans.
+\subsubsection{Booleans}
+Boolean values in Kivi are implemented as a regular Structured Data Type having
+two constructors representing true and false:
+
+\begin{verbatim}
+  data Boolean = True | False
+\end{verbatim}
+
+\subsubsection{Lists}
+Lists are structures that allow storing a number of items. They
+provide a set of operations on them that allowing to create other
+lists\footnote{In Kivi lists as well as other types are immutable, which means
+that you cannot modify its contents. Instead you create new values which may
+differ from previous ones. }
+Kivi provides a variety of way to define a list. First of all lists can be seen
+as regular Data Type. Thus there are two constructors for a \texttt{List}
+datatype. \texttt{Nil} and \texttt{Cons}:
+
+\begin{verbatim}
+  data List = Nil 0 | Cons 2
+\end{verbatim}
+
+\texttt{Nil} instantiates an empty \texttt{List} whereas \texttt{Cons} is meant
+to \textit{construct} \texttt{List} given two elements: the \textit{head} and
+\textit{tail}. List are recursive structures, thus \textit{tail} is another
+list.
+
+It turns out that creating a \texttt{List} is a task that occurs very often in
+functional languages, therefore it would be nice not to have to write long
+constructs such as this one to create 4-element \texttt{List}:
+
+\begin{verbatim}
+  Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))
+\end{verbatim}
+
+Most functional languages allow programmer to express it in a much shorter way,
+and Kivi does it too:
+
+\begin{verbatim}
+  [1,2,3,4]
+\end{verbatim}
+
+The same thing concern constructing lists given two elements. Kivi provides
+`:`(colon) as construction operator for \texttt{List} type, so the programmer
+would write:
+
+\begin{verbatim}
+  ((2+3) : [1,2,3,4])
+\end{verbatim}
+instead of:
+
+\begin{verbatim}
+  Cons (2+3)  [1,2,3,4]
+\end{verbatim}
+
+\subsubsection{Tuples}
+Tuples are yet another way of storing multiple values in a single one. However
+the difference between them and lists is significant. Tuples are
+\textit{immutable} in a way that you cannot \textit{cons} to a tuple nor
+decompose them into parts using pattern matching. Their main usage is when a
+programmer knows in advance how many elements will he need to store.
+
+There is a predefined number of tuple types that you can create, and currently
+the bound is set to 5. This means that programmer is not allowed to create
+tuples that contain more than 5 elements. This design decision is due to the
+fact that from my perspective it's better to use custom Structured Data Type
+for readability reasons. The limit of 5 however, is an experimental value and
+might be changed.
+
+This all means that tuples with different number of elements are different
+types. Therefore there is no such thing as generic `Tuple` type. There are
+however \texttt{Tuple0}, \texttt{Tuple1}, \ldots etc., representing tuples with
+0 elements, 1 element, \ldots etc.
+
+There are two ways to create a tuple either by using constructors or by a
+special \textit{syntactic sugar} construct, similarly as in the case for lists.
+These two ways for instantiating a 3-element tuple are equivalent, with the
+preference for the second one, due to readability concerns.
+
+\begin{verbatim}
+  (((Tuple3 1) 2) 3)
+\end{verbatim}
+and
+\begin{verbatim}
+  (1, 2, 3)
+\end{verbatim}
 
 \subsection{Merging patterns}
 \subsection{Transforming \texttt{let} expressions}
