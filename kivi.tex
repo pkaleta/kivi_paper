@@ -352,7 +352,7 @@ in a very concise way:
 We have already discussed the parsing in previous chapters, so in the following
 sections I'm going to provide a description of all remaining phases.
 
-\subsection{Structured Data Types and Tagging}
+\section{Structured Data Types and Tagging}
 In order to understand the need for this pass one has to know how structured
 data types and their constructors are represented internally.
 A custom data type declaration in Kivi might look like this one:
@@ -401,7 +401,7 @@ sqrTree (Leaf v) = Leaf (v * v)
 sqrTree (Branch t1 t2) = Branch (sqrTree t1) (sqrTree t2)
 \end{lstlisting}
 
-\subsubsection{Built-in Data Types}
+\subsection{Built-in Data Types}
 There are few types that are considered built-ins. These are lists, tuples,
 and booleans. The ability to think of these common concepts in functional
 programming as Structured Data Types makes the implementation straightforward
@@ -494,7 +494,7 @@ and
   (1, 2, 3)
 \end{verbatim}
 
-\subsubsection{Implementation and tagging}
+\subsection{Implementation and tagging}
 Internally each data type consist of a list of constructors, each containing a
 \textit{tag}, and \textit{arity}. Constructor tags should uniquely identify
 each constructor therefore each tag should be different. The definitions
@@ -523,14 +523,66 @@ The definitions for those functionalities has been placed in
 \textit{AbstractDataTypes.hs} file.
 
 
-\subsection{Merging patterns}
-\subsection{Transforming \texttt{let} expressions}
-\subsection{Pattern Matching}
-\subsection{Transforming \texttt{case} expressions}
-\subsection{Dependency analysis}
-\subsection{Lambda lifting}
-\subsection{Lazy lambda lifting}
+\section{Pattern Matching}
+This section describes the details and motivation behing pattern matching as
+well as describes details of algorithms that transform high-level pattern
+matching constructs into enriched lambda calculus.
 
+\begin{lstlisting}[label=lst:length,caption={Calculating length of list.}]
+  length [] = 0;
+  length (x : xs) = length xs + 1
+
+  length Nil = 0;
+  length (Cons x xs) = length xs + 1
+\end{lstlisting}
+
+Listing~\ref{lst:length} reminds the already well known function for
+calculating the length of a list, and also presents the version of the same
+function but without \textit{syntactic sugar}. For the purpose of further
+discussion lets assume that we're calculating the length of 3-element list:
+
+\begin{verbatim}
+  [1, 2, 3]
+\end{verbatim}
+which is the same as:
+\begin{verbatim}
+  Cons 1 (Cons 2 (Cons 3 Nil))
+\end{verbatim}
+
+The way the pattern matching compiler works, is that when length is applied to
+an expression it might be not evaluated yet, so in order to proceed we have to
+evaluate the function argument. Next, compiler checks whether argument is a Nil
+constructor. This is not the case so compiler proceeds to checking against the
+second branch. This time it succeeds and \texttt{x} is bound to \texttt{1} and
+\texttt{xs} is bound to \texttt{[2, 3]}. The left-hand-sides of function
+equations are called \textit{patterns}. They can consist of constructors,
+variables, numbers, single characters and strings\footnote{Both the built-in ones as well
+as those defined by programmer.}. In previous example we've seen the
+combination of those, i.e. The pattern was composed of constructors and
+variables. Patterns in the previous example were not \textit{overlapping}. It
+means that changing the order of function equations would not alter the
+behaviour of the function. The situation changes when we look at example
+presented in Listing~\ref{lst:gcd}.
+
+\begin{lstlisting}[label=lst:gcd,caption={Greatest common divisor.}]
+  gcd a 0 = a;
+  gcd a b = gcd b (b % a)
+\end{lstlisting}
+
+Here if we've changed the order of equations, the function will never terminate
+because the first clause would always match. This kind of patterns are called
+\textit{overlapping patterns}.
+
+TODO: nested patterns
+TODO: patterns in let bindings
+
+\section{Transforming \texttt{lambda} abstractions}
+\section{Transforming \texttt{let} expressions}
+\section{Transforming \texttt{case} expressions}
+\section{Dependency Analysis}
+\section{Lambda Lifting}
+\section{Lazy Lambda Lifting}
+\section{Type Checker}
 
 
 \chapter{G-Machine}
