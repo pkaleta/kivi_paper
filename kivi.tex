@@ -556,10 +556,21 @@ constructor. This is not the case so compiler proceeds to checking against the
 second branch. This time it succeeds and \texttt{x} is bound to \texttt{1} and
 \texttt{xs} is bound to \texttt{[2, 3]}. The left-hand-sides of function
 equations are called \textit{patterns}. They can consist of constructors,
-variables, numbers, single characters and strings\footnote{Both the built-in ones as well
-as those defined by programmer.}. In previous example we've seen the
-combination of those, i.e. The pattern was composed of constructors and
-variables. Patterns in the previous example were not \textit{overlapping}. It
+variables, numbers, single characters and strings\footnote{Both the built-in
+ones as well as those defined by programmer.}. In previous example we've seen
+the combination of those, i.e. The pattern was composed of constructors and
+variables. Nothing prevents programmer from creating the so called
+\textit{nested patterns}. Example of such situation is present in
+Listing~\ref{lst:second_element}, where the function is extracting the second
+element from the list.
+
+\begin{lstlisting}[label=lst:second_element,caption={Greatest common divisor.}]
+  second [] = 0;
+  second [x] = 0;
+  second (x1 : (x2 : xs)) = x2
+\end{lstlisting}
+
+Patterns in the previous example were not \textit{overlapping}. It
 means that changing the order of function equations would not alter the
 behaviour of the function. The situation changes when we look at example
 presented in Listing~\ref{lst:gcd}.
@@ -573,11 +584,33 @@ Here if we've changed the order of equations, the function will never terminate
 because the first clause would always match. This kind of patterns are called
 \textit{overlapping patterns}.
 
-TODO: nested patterns
-TODO: patterns in let bindings
+Pattern matching can occur not only in function equations but also in other
+places in source code. It can be used in \texttt{case} expressions as well as
+in \texttt{let} and \texttt{letrec} bindings. Examples of those two pattern
+matching uses are presented in Listing~\ref{lst:case_pattern_matching} and
+~\ref{lst:letrec_pattern_matching}. Making pattern matching available in
+let(rec)s at first sight might look like very similar to other constructs. In
+reality, however it requires quite a complicated additional pass that transform
+let(rec)s into more suitable form.  This transformation is described in more
+detail in Section~\ref{sec:letrec_transform}.
+
+\begin{lstlisting}[label=lst:case_pattern_matching,caption={Pattern matching in
+  case expressions.}]
+\end{lstlisting}
+
+\begin{lstlisting}[label=lst:letrec_pattern_matching,caption={Pattern matching
+  in let(rec) expressions.}]
+  let
+      (x : xs) = [1, 2, 3, 4];
+      (y : ys) = [5, 6, 7, 8];
+      z = [9, 8, 7]
+  in
+      ((x + y) : z)
+\end{lstlisting}
 
 \section{Transforming \texttt{lambda} abstractions}
 \section{Transforming \texttt{let} expressions}
+\label{sec:letrec_transform}
 \section{Transforming \texttt{case} expressions}
 \section{Dependency Analysis}
 \section{Lambda Lifting}
