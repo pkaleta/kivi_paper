@@ -609,7 +609,7 @@ sqrList list =
   in let(rec) expressions.}]
 let
     (x : xs) = [1, 2, 3, 4];
-    (y : ys) = [5, 6, 7, 8];
+    (y : ys) = [5, 6, 7, 8]
 in
     x + y
 \end{lstlisting}
@@ -644,17 +644,17 @@ perform pattern matching in more optimized fashion we have to transform into
 the following form:
 
 \begin{lstlisting}[mathescape=true]
-map = $\lambda$f.$\lambda$xs.
-    case xs of
-        Nil       -> Nil
-        Cons y ys -> Cons (f y) (map f ys)
+$map = \lambda f.\lambda xs.$
+    $case\:xs\:of$
+        $Nil\:\:\:\:\:\:\:\:\:\:\:\: \rightarrow Nil$
+        $Cons\:y\:ys \rightarrow Cons\:(f\:y)\:(map\:f\:ys)$
 \end{lstlisting}
 
-The remaining part of this section contains a description of algorithm that is
-capable of transforming pattern matching into the form that uses case
+The remaining part of this section contains a description of an algorithm that
+is capable of transforming pattern matching into the form that uses case
 expressions instead of pattern-matching lambda abstractions, thus allowing to
 compile patterns more efficiently. In order to see a more detailed analysis
-refer to Chapter 5 of \cite{jones87}.
+refer to Chapters 4 and 5 of \cite{jones87}.
 
 \subsubsection{Pattern-matching Lambda Abstractions}
 In lambda calculus, regular lambda abstraction is an expression of the
@@ -670,15 +670,6 @@ takes a single input, and the \(\lambda\) is said to bind \textit{x} in
 taken to be first class values, so functions may be used as the inputs to other
 functions, and functions may return functions as their outputs.
 
-\subsubsection{Free variables}
-\label{sec:free_variable}
-A free variable is a notation that specifies places in an expression where
-substitution may take place. The idea is related to a placeholder (a symbol
-that will later be replaced by some literal string), or a wildcard character
-that stands for an unspecified symbol.
-In computer programming, a free variable is a variable referred to in a
-function that is not a local variable nor an argument of that function:
-
 The difference between regular and pattern-matching lambda abstractions lies in
 a fact that instead of variable $x$ on the left side a pattern might be
 used. So it might look like that:
@@ -688,16 +679,25 @@ $\lambda p.t$
 where $p$ is a pattern\footnote{Variable is also considered as a
 pattern, so regular lambda abstractions form a subset of pattern-matching ones.}
 
+\subsubsection{Free variables}
+\label{sec:free_variable}
+A free variable is a notation that specifies places in an expression where
+substitution may take place. The idea is related to a placeholder (a symbol
+that will later be replaced by some literal string), or a wildcard character
+that stands for an unspecified symbol.
+In computer programming, a free variable is a variable referred to in a
+function that is not a local variable nor an argument of that function:
+
 \subsubsection{Translating function equations to pattern-matching lambda
 abstractions}
 For the purpose of further explanations lets consider the following function
 definition:
 
 \begin{lstlisting}[mathescape=true]
-$f p_{1} = e_{1}$
-$f p_{2} = e_{2}$
+$f\:p_{1} = e_{1}$
+$f\:p_{2} = e_{2}$
    $\vdots$
-$f p_{n} = e_{n}$
+$f\:p_{n} = e_{n}$
 \end{lstlisting}
 
 The pattern matching will be executed from top to bottom until some of them
@@ -708,10 +708,10 @@ error should be reported that no matching branch was found. With this in mind
 we can translate the definition of $f$ into following one:
 
 \begin{lstlisting}[mathescape=true]
-$f = \lambda x.(((\lambda p_{1}'.e_{1}') x)\:[]$
-      $((\lambda p_{2}'.e_{2}') x)\:[]$
+$f = \lambda x.(((\lambda p_{1}'.e_{1}')\:x)\:[]$
+      $((\lambda p_{2}'.e_{2}')\:x)\:[]$
           $\vdots$
-      $((\lambda p_{n}'.e_{n}') x)\:[]$
+      $((\lambda p_{n}'.e_{n}')\:x)\:[]$
       $PatternMatchingError$
 \end{lstlisting}
 Here, $x$ is a newly introduced variable name to temporarily hold the argument
@@ -736,6 +736,121 @@ In this example $PatternMatchingError$ will never be returned because the set
 of constructors $Nil$ and $Cons$ covers the whole domain of constructors for
 $List$ datatype. It is possible however to construct an example that will cause
 that error to occur.
+
+\subsubsection{Pattern matching algorithm}
+
+In general a multi-pattern function definition in Kivi of the form:
+\begin{lstlisting}[mathescape=true]
+$f\:p_{1,1}\:p_{1,2} \dots p_{1,n} = e_{1}$
+$f\:p_{2,1}\:p_{2,2} \dots p_{2,n} = e_{2}$
+        $\vdots$
+$f\:p_{m,1}\:p_{m,2} \dots p_{m,n} = e_{m}$
+\end{lstlisting}
+is going to be translated into:
+\begin{lstlisting}[mathescape=true]
+$f = \lambda v_{1}.\lambda v_{2} \dots \lambda v_{n}.((\lambda p_{1,1}'.\lambda.p_{1,2}'\dots\lambda p_{1,n}')\:v_{1}\:v_{2} \dots v_{n})\:[]$
+              $((\lambda p_{2,1}'.\lambda.p_{2,2}'\dots\lambda p_{2,n}')\:v_{1}\:v_{2} \dots v_{n})\:[]$
+                          $\vdots$
+              $((\lambda p_{m,1}'.\lambda.p_{m,2}'\dots\lambda p_{m,n}')\:v_{1}\:v_{2} \dots v_{n})\:[]$
+              $PatternMatchingError$
+\end{lstlisting}
+
+Here's the point where the pattern matching algorithm starts its work. The goal
+is to translate this form into one using \texttt{case} expressions. The code
+responsible for this task has been placed in \textit{PatternMatching.hs} module
+and will be used as a reference. The heart of algorithm is formed by
+\texttt{match*} set of mutually recursive functions, specifically
+\texttt{matchSc} is the one that performs pattern matching on supercombinators,
+and \texttt{matchEquations} matches function definition equations.
+\texttt{matchEquations} has the following type signature:
+
+\begin{lstlisting}
+matchEquations :: NameSupply
+               -> [DataType]
+               -> Int
+               -> [Name]
+               -> [Equation]
+               -> Expr Pattern
+               -> (NameSupply, Expr Pattern)
+matchEquations ns dts n [] eqs def
+\end{lstlisting}
+
+where
+\begin{itemize}
+  \item \texttt{ns}: Name supply for generating new unique names for
+    introduced variables
+  \item \texttt{dts}: A set of defined data types needed later in constructor
+    rule (see ~\ref{sec:constructor_rule})
+  \item \texttt{n}: The length of the list of argument variables
+  \item \texttt{vs}: A list of argument variables
+  \item \texttt{eqs}: Function equations. They consist of list of patterns as
+    well as expression body:
+\begin{lstlisting}
+  type Equation = ([Pattern], Expr Pattern)
+\end{lstlisting}
+  \item \texttt{def}: The default expression to evaluate when none of patterns
+    matches
+\end{itemize}
+
+It works according to three rules depending on the type of currently considered
+equation: the variable, constructor and mixture rules. They are described in
+next sections. Function \texttt{classifyEquation} returns this type given the
+equation.
+
+\subsubsection{The Variable Rule}
+This rule applies when every equation begins with a variable pattern. In such
+case it is possible to remove that variable from every equation and also remove
+the corresponding argument variable from \texttt{vs} list. After that we should
+transform every expression corresponding to that pattern by one where every
+occurence of removed variable is substituted with the corresponding variable
+from \texttt{vs} list. This behaviour is implemented by \texttt{matchVar}
+function.
+Our previous example - the \texttt{map} function eventually runs into situation
+where variable rule is applicable\footnote{This is a simplified call to
+\texttt{matchEquations} where not all arguments are present}:
+
+\begin{lstlisting}[mathescape=true]
+matchEquations
+    [$v_{1}$, $v_{2}$]
+    [([f, Nil], Nil),
+     ([f, Cons y ys], Cons (f y) (map f xs))]
+    def
+\end{lstlisting}
+After applying the variable rule it would have such form:
+\begin{lstlisting}[label=lst:variable_rule, caption={State after applying
+  variable rule.}, mathescape=true]
+matchEquations
+    [$v_{2}$]
+    [([Nil], Nil),
+     ([Cons y ys, Cons ($v_{1}$ y) (map $v_{1}$ xs)])]
+    def
+\end{lstlisting}
+
+\subsubsection{The Constructor Rule}
+Similarly constructor rule is applied when every equation begins with
+constructors. Equations are groupped together according to the constructor and
+a case expression is introduced in order to choose the right branch. Each group
+is now considered separately by recursive calls to \texttt{matchEquation}. New
+argument variables are added to each group \texttt{vs} variable according to
+the arity of a constructor. This logic has been implemented in
+\texttt{matchConstr} function. Again a simple example will clarify this step.
+
+After applying variable rule we've reached the state presented in
+Listing~\ref{lst:variable_rule}. Here there are two constructors for two
+equations: \texttt{Nil} and \texttt{Cons} so constructor rule applies:
+
+\begin{lstlisting}[label=lst:constructor_rule, caption={State after applying
+  constructor rule.}, mathescape=true]
+case $v_{2}$ of
+    Nil       -> matchEquations []
+                                []
+                                def
+    Cons $v_{3}$ $v_{4}$ -> matchEquations [$v_{3}$, $v_{4}$]
+                                [y, ys]
+                                def
+\end{lstlisting}
+
+\subsubsection{The Mixture Rule}
 
 
 \section{Transforming \texttt{lambda} abstractions}
