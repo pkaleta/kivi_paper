@@ -1,5 +1,6 @@
 \documentclass[a4paper]{report}
 %\usepackage{fullpage}
+\usepackage{alltt}
 \usepackage{listings}
 \usepackage{caption}
 \usepackage{url}
@@ -125,18 +126,19 @@ TODO: Grammar of the language
 
 This two-phase process is implemented as\footnote{Where \texttt{PatProgram}
 is program containing patterns}:
-\begin{verbatim}
-  parse :: String -> PatProgram
-  parse = syntax . lex
-\end{verbatim}
+
+\begin{lstlisting}
+parse :: String -> PatProgram
+parse = syntax . lex
+\end{lstlisting}
 
 \section{Lexical analysis}
 
 The types for lexer are following:
-\begin{verbatim}
-  type Token = String
-  type TokenInfo = (Int, Token)
-\end{verbatim}
+\begin{lstlisting}
+type Token = String
+type TokenInfo = (Int, Token)
+\end{lstlisting}
 Where \texttt{TokenInfo} consist of line number and a token string itself.
 
 The heart of \textit{lexical analyser} is the \texttt{lex'} function. It works
@@ -157,6 +159,7 @@ qwfofqw
 efeqw
 f
 TODO: jak powstaje drzewo ast przedstawic tutaj datatype ktory sluzy do
+\subsection{Analysing patterns}
 trzymania ast
 
 
@@ -179,7 +182,7 @@ arguments, and those which doesn't are called \textit{constant applicative forms
 supercombinator with one argument.
 
 \begin{lstlisting}[label=supercombinator_ex,caption={Simple supercombinator.}]
-  sqr x = x * x
+sqr x = x * x
 \end{lstlisting}
 
 There is one special supercombinator called \textit{main}, that takes no
@@ -195,13 +198,13 @@ the appriopriate execution path is chosen. Example of case expression is
 presented in Listing~\ref{lst:case_ex}.
 
 \begin{lstlisting}[label=lst:case_ex,caption={Fibonacci with case}]
-  fib n =
-      case n of
-          0 -> 1;
-          1 -> 1;
-              n -> fib (n-1) + fib (n-2);
+fib n =
+    case n of
+        0 -> 1;
+        1 -> 1;
+            n -> fib (n-1) + fib (n-2);
 
-  main = fib 10
+main = fib 10
 \end{lstlisting}
 
 % TODO: zmienic \ref{xxx} na \ref{lst:xxx}
@@ -213,13 +216,13 @@ local binding is presented in Listing~\ref{let_ex}
 
 
 \begin{lstlisting}[label=let_ex,caption={Local \texttt{let} binding.}]
-  sum x y = x + y;
+sum x y = x + y;
 
-  main =
-      let x = 1
-          y = 2
-      in
-          sum x y
+main =
+    let x = 1
+        y = 2
+    in
+        sum x y
 \end{lstlisting}
 
 \subsection{Recursive local bindings}
@@ -228,15 +231,15 @@ special \texttt{letrec} construct as shown in Listing~\ref{factorial_letrec_ex}
 
 
 \begin{lstlisting}[label=factorial_letrec_ex,caption={Factorial function using \texttt{letrec}.}]
-  sum x y = x + y;
+sum x y = x + y;
 
-  main =
-      letrec fac n =
-          case n == 0 of
-              True -> 1;
-              False -> n * fac (n-1)
-      in
-          fac 5
+main =
+    letrec fac n =
+        case n == 0 of
+            True -> 1;
+            False -> n * fac (n-1)
+    in
+        fac 5
 \end{lstlisting}
 
 \subsection{Where clauses}
@@ -245,11 +248,11 @@ clause. Internally it will be translated into letrec binding. Example use of
 \texttt{where} clause is shown in Listing~\ref{factorial_where_ex}
 
 \begin{lstlisting}[label=factorial_where_ex,caption={Factorial function using \texttt{where}.}]
-  main = fac 5
-      where
-          fac n = case n == 0 of
-              True -> 1;
-              False -> n * fac (n - 1)
+main = fac 5
+    where
+        fac n = case n == 0 of
+            True -> 1;
+            False -> n * fac (n - 1)
 \end{lstlisting}
 
 \subsection{Lambda abstractions}
@@ -260,7 +263,7 @@ functions} used in imperative languages. The syntax for defining lambda
 abstractions is presented in Listing~\ref{lambda_ex}.
 
 \begin{lstlisting}[label=lambda_ex,caption={Lambda abstraction}]
-  f = (\x . x * 2) 42
+f = (\x . x * 2) 42
 \end{lstlisting}
 
 In this example the lambda abstraction which doubles the arguments value is
@@ -285,8 +288,8 @@ all patterns it turns out that none of them matches the argument, the error is
 returned.
 
 \begin{lstlisting}[label=pattern_matching_ex,caption={Factorial using pattern matching.}]
-  fac 0 = 1
-  fac n = n * fac (n - 1)
+fac 0 = 1
+fac n = n * fac (n - 1)
 \end{lstlisting}
 
 In Listing~\ref{pattern_matching_ex} a recursive supercombinator \texttt{fac}
@@ -305,10 +308,10 @@ new type as well as its constructors and arities. Together with pattern matching
 provide a very powerful mechanism for dealing with structured entities.
 
 \begin{lstlisting}[label=data_type_ex,caption={Calculating length of list.}]
-  data List = Nil 0 | Cons 2;
+data List = Nil 0 | Cons 2;
 
-  length Nil = 0;
-  length (Cons x xs) = 1 + length xs
+length Nil = 0;
+length (Cons x xs) = 1 + length xs
 \end{lstlisting}
 
 In Listing~\ref{data_type_ex} a data type \texttt{List} is declared as well as
@@ -335,19 +338,19 @@ process as a function composition of all transformations. This is exactly the
 way the compilation is implemented in Kivi, and Haskell lets to express this
 in a very concise way:
 
-\begin{verbatim}
-  run :: String -> String
-  run = showResults
-      . eval
-      . compile
-      . lambdaLift
-      . lazyLambdaLift
-      . analyseDeps
-      . transformToLambdaCalculus
-      . mergePatterns
-      . tag
-      . parse
-\end{verbatim}
+\begin{lstlisting}
+run :: String -> String
+run = showResults
+    . eval
+    . compile
+    . lambdaLift
+    . lazyLambdaLift
+    . analyseDeps
+    . transformToLambdaCalculus
+    . mergePatterns
+    . tag
+    . parse
+\end{lstlisting}
 
 We have already discussed the parsing in previous chapters, so in the following
 sections I'm going to provide a description of all remaining phases.
@@ -357,9 +360,9 @@ In order to understand the need for this pass one has to know how structured
 data types and their constructors are represented internally.
 A custom data type declaration in Kivi might look like this one:
 
-\begin{verbatim}
-  data Tree = Leaf 1 | Branch 2
-\end{verbatim}
+\begin{lstlisting}
+data Tree = Leaf 1 | Branch 2
+\end{lstlisting}
 
 This statement declares the new data type called \texttt{Tree} which can be
 constructed in two ways. The common way of looking at the constructors is to
@@ -370,9 +373,9 @@ value. The other way to construct a \texttt{Tree} is to create a \texttt{Branch}
 taking two children (which also are \texttt{Tree}s) as arguments. For example,
 conceptual representation of the following tree is shown in Figure~\ref{fig:tree}:
 
-\begin{verbatim}
-  Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))
-\end{verbatim}
+\begin{lstlisting}
+Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))
+\end{lstlisting}
 
 \begin{figure}[h!]
   \centering
@@ -411,9 +414,9 @@ notion of data types.
 Boolean values in Kivi are implemented as a regular Structured Data Type having
 two constructors representing true and false:
 
-\begin{verbatim}
-  data Boolean = True | False
-\end{verbatim}
+\begin{lstlisting}
+data Boolean = True | False
+\end{lstlisting}
 
 \subsubsection{Lists}
 Lists are structures that allow storing a number of items. They
@@ -425,9 +428,9 @@ Kivi provides a variety of way to define a list. First of all lists can be seen
 as regular Data Type. Thus there are two constructors for a \texttt{List}
 datatype. \texttt{Nil} and \texttt{Cons}:
 
-\begin{verbatim}
-  data List = Nil 0 | Cons 2
-\end{verbatim}
+\begin{lstlisting}
+data List = Nil 0 | Cons 2
+\end{lstlisting}
 
 \texttt{Nil} instantiates an empty \texttt{List} whereas \texttt{Cons} is meant
 to \textit{construct} \texttt{List} given two elements: the \textit{head} and
@@ -438,29 +441,29 @@ It turns out that creating a \texttt{List} is a task that occurs very often in
 functional languages, therefore it would be nice not to have to write long
 constructs such as this one to create 4-element \texttt{List}:
 
-\begin{verbatim}
-  Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))
-\end{verbatim}
+\begin{lstlisting}
+Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))
+\end{lstlisting}
 
 Most functional languages allow programmer to express it in a much shorter way,
 and Kivi does it too:
 
-\begin{verbatim}
-  [1,2,3,4]
-\end{verbatim}
+\begin{lstlisting}
+[1, 2, 3, 4]
+\end{lstlisting}
 
 The same thing concern constructing lists given two elements. Kivi provides
 `:`(colon) as construction operator for \texttt{List} type, so the programmer
 would write:
 
-\begin{verbatim}
-  ((2+3) : [1,2,3,4])
-\end{verbatim}
+\begin{lstlisting}
+((2+3) : [1,2,3,4])
+\end{lstlisting}
 instead of:
 
-\begin{verbatim}
-  Cons (2+3)  [1,2,3,4]
-\end{verbatim}
+\begin{lstlisting}
+Cons (2+3)  [1,2,3,4]
+\end{lstlisting}
 
 \subsubsection{Tuples}
 Tuples are yet another way of storing multiple values in a single one. However
@@ -486,13 +489,13 @@ special \textit{syntactic sugar} construct, similarly as in the case for lists.
 These two ways for instantiating a 3-element tuple are equivalent, with the
 preference for the second one, due to readability concerns:
 
-\begin{verbatim}
-  (((Tuple3 1) 2) 3)
-\end{verbatim}
+\begin{lstlisting}
+(((Tuple3 1) 2) 3)
+\end{lstlisting}
 and
-\begin{verbatim}
-  (1, 2, 3)
-\end{verbatim}
+\begin{lstlisting}
+(1, 2, 3)
+\end{lstlisting}
 
 \subsection{Implementation and tagging}
 Internally each data type consist of a list of constructors, each containing a
@@ -501,10 +504,10 @@ each constructor therefore each tag should be different. The definitions
 for \texttt{DataType} and \texttt{Constructor} type synonyms, as in
 \textit{Common.hs} are as follows:
 
-\begin{verbatim}
-  type DataType = (Name, [Constructor])
-  type Constructor = (Name, Int, Int)
-\end{verbatim}
+\begin{lstlisting}
+type DataType = (Name, [Constructor])
+type Constructor = (Name, Int, Int)
+\end{lstlisting}
 
 Because of the fact that there's no way to know in advance how many data type
 declarations are there in source file I had to devise some way to assign a
@@ -529,11 +532,11 @@ well as describes details of algorithms that transform high-level pattern
 matching constructs into enriched lambda calculus.
 
 \begin{lstlisting}[label=lst:length,caption={Calculating length of list.}]
-  length [] = 0;
-  length (x : xs) = length xs + 1
+length [] = 0;
+length (x : xs) = length xs + 1
 
-  length Nil = 0;
-  length (Cons x xs) = length xs + 1
+length Nil = 0;
+length (Cons x xs) = length xs + 1
 \end{lstlisting}
 
 Listing~\ref{lst:length} reminds the already well known function for
@@ -541,13 +544,13 @@ calculating the length of a list, and also presents the version of the same
 function but without \textit{syntactic sugar}. For the purpose of further
 discussion lets assume that we're calculating the length of 3-element list:
 
-\begin{verbatim}
-  [1, 2, 3]
-\end{verbatim}
+\begin{lstlisting}
+[1, 2, 3]
+\end{lstlisting}
 which is the same as:
-\begin{verbatim}
-  Cons 1 (Cons 2 (Cons 3 Nil))
-\end{verbatim}
+\begin{lstlisting}
+Cons 1 (Cons 2 (Cons 3 Nil))
+\end{lstlisting}
 
 The way the pattern matching compiler works, is that when length is applied to
 an expression it might be not evaluated yet, so in order to proceed we have to
@@ -565,9 +568,9 @@ Listing~\ref{lst:second_element}, where the function is extracting the second
 element from the list.
 
 \begin{lstlisting}[label=lst:second_element,caption={Greatest common divisor.}]
-  second [] = 0;
-  second [x] = 0;
-  second (x1 : (x2 : xs)) = x2
+second [] = 0;
+second [x] = 0;
+second (x1 : (x2 : xs)) = x2
 \end{lstlisting}
 
 Patterns in the previous example were not \textit{overlapping}. It
@@ -576,37 +579,105 @@ behaviour of the function. The situation changes when we look at example
 presented in Listing~\ref{lst:gcd}.
 
 \begin{lstlisting}[label=lst:gcd,caption={Greatest common divisor.}]
-  gcd a 0 = a;
-  gcd a b = gcd b (b % a)
+gcd a 0 = a;
+gcd a b = gcd b (b % a)
 \end{lstlisting}
 
 Here if we've changed the order of equations, the function will never terminate
 because the first clause would always match. This kind of patterns are called
 \textit{overlapping patterns}.
 
-Pattern matching can occur not only in function equations but also in other
-places in source code. It can be used in \texttt{case} expressions as well as
-in \texttt{let} and \texttt{letrec} bindings. Examples of those two pattern
+Pattern matching can occur not only in function equations but also in source
+code constructs. It can be used in \texttt{case} expressions as well as in
+\texttt{let} and \texttt{letrec} bindings. Examples of those two pattern
 matching uses are presented in Listing~\ref{lst:case_pattern_matching} and
-~\ref{lst:letrec_pattern_matching}. Making pattern matching available in
+~\ref{lst:letrec_pattern_matching}.  Making pattern matching available in
 let(rec)s at first sight might look like very similar to other constructs. In
-reality, however it requires quite a complicated additional pass that transform
-let(rec)s into more suitable form.  This transformation is described in more
-detail in Section~\ref{sec:letrec_transform}.
+reality, however, it requires quite a complicated additional pass that
+transform let(rec)s into more suitable form.  This transformation is described
+in more detail in Section~\ref{sec:letrec_transform}.
 
 \begin{lstlisting}[label=lst:case_pattern_matching,caption={Pattern matching in
-  case expressions.}]
+case expressions.}]
+sqrList list =
+    case list of
+        [] -> []
+        (x : xs) -> ((x * x) : sqrList xs)
 \end{lstlisting}
 
 \begin{lstlisting}[label=lst:letrec_pattern_matching,caption={Pattern matching
   in let(rec) expressions.}]
-  let
-      (x : xs) = [1, 2, 3, 4];
-      (y : ys) = [5, 6, 7, 8];
-      z = [9, 8, 7]
-  in
-      ((x + y) : z)
+let
+    (x : xs) = [1, 2, 3, 4];
+    (y : ys) = [5, 6, 7, 8];
+in
+    x + y
 \end{lstlisting}
+
+\subsection{Compiling Pattern Matching}
+The simplest way to think of pattern matching is to match expression with first
+pattern and in case it doesn't match, try the following patterns. Within each
+equation patterns are tested from left to right\footnote{In case of functions
+with multiple patterns}. Lets consider an example of \texttt{map} function from
+Listing~\ref{lst:map}.
+
+\begin{lstlisting}[label=lst:map,caption={Map function example.}]
+map f [] = [];
+map f (x : xs) = ((f x) : (map f xs));
+
+main = map (\x . x * x) [1, 2, 3, 4, 5]
+\end{lstlisting}
+
+The \texttt{map} function returns a list constructed by appling a function
+\texttt{f} to all items in a list passed as the second argument. What our
+mental model of pattern matching will do when evaluating the \texttt{main}
+function, is that it will first try to match the \texttt{(\textbackslash x . x
+* x)} lambda abstraction with \texttt{f} variable which will succeed. Matching
+any expression to variable will result in success. Then the list \texttt{[1, 2,
+3, 4, 5]} will be matched against an empty list - \texttt{[]} and it will fail.
+In this situation, according to our simple strategy the algorithm will try to
+match the second equation. So it will again try to match the lambda abstraction
+with \texttt{f} variable pattern. As we can observe evaluation according to the
+simple algorithm might result in redundant computations, and in case of more
+complicated patterns it might be a substantial drawback. In order to be able to
+perform pattern matching in more optimized fashion we have to transform into
+the following form:
+
+\begin{lstlisting}[mathescape=true]
+map = $\lambda$f.$\lambda$xs.
+    case xs of
+        Nil       -> Nil
+        Cons y ys -> Cons (f y) (map f ys)
+\end{lstlisting}
+
+The remaining part of this section contains a description of algorithm that is
+capable of transforming pattern matching into the form that uses case
+expressions instead of pattern-matching lambda abstractions, thus allowing to
+compile patterns more efficiently. In order to see a more detailed analysis
+refer to Chapter 5 of \cite{jones87}.
+
+\subsubsection{Pattern-matching Lambda Abstractions}
+In Lambda Calculus, regular lambda abstraction is an expression of the
+following form:
+\begin{lstlisting}[mathescape=true]
+$\lambda$x.t
+\end{lstlisting}
+where \texttt{x} represents a \textit{variable} and \texttt{t} stands for
+\textit{term}. Intuitively, a lambda abstraction is an anonymous function that
+takes a single input, and the \(\lambda\) is said to bind \texttt{x} in
+\texttt{t}, and an application \texttt{ts} represents the application of input
+\texttt{s} to some function \texttt{t}. In the lambda calculus, functions are
+taken to be first class values, so functions may be used as the inputs to other
+functions, and functions may return functions as their outputs.
+
+The difference between regular and pattern-matching lambda abstractions lies in
+a fact that instead of variable \texttt{x} on the left side a pattern might be
+used. So it might look like that:
+\begin{lstlisting}[mathescape=true]
+$\lambda$p.t
+\end{lstlisting}
+where \texttt{p} is a pattern\footnote{Variable is also considered as a
+pattern, so regular lambda abstractions form a subset of pattern-matching ones.}
 
 \section{Transforming \texttt{lambda} abstractions}
 \section{Transforming \texttt{let} expressions}
