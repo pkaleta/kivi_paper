@@ -793,7 +793,7 @@ where
 \end{itemize}
 
 It works according to three rules depending on the type of currently considered
-equation: the variable, constructor and mixture rules. They are described in
+equation: the variable, constructor, mixture and empty rules. They are described in
 next sections. Function \texttt{classifyEquation} returns this type given the
 equation.
 
@@ -814,7 +814,7 @@ matchEquations
     [$v_{1}$, $v_{2}$]
     [([f, Nil], Nil),
      ([f, Cons y ys], Cons (f y) (map f xs))]
-    def
+    Error
 \end{lstlisting}
 After applying the variable rule it would have such form:
 \begin{lstlisting}[label=lst:variable_rule, caption={State after applying
@@ -823,7 +823,7 @@ matchEquations
     [$v_{2}$]
     [([Nil], Nil),
      ([Cons y ys, Cons ($v_{1}$ y) (map $v_{1}$ xs)])]
-    def
+    Error
 \end{lstlisting}
 
 \subsubsection{The Constructor Rule}
@@ -844,13 +844,59 @@ equations: \texttt{Nil} and \texttt{Cons} so constructor rule applies:
 case $v_{2}$ of
     Nil       -> matchEquations []
                                 []
-                                def
+                                Error
     Cons $v_{3}$ $v_{4}$ -> matchEquations [$v_{3}$, $v_{4}$]
                                 [y, ys]
-                                def
+                                Error
 \end{lstlisting}
 
 \subsubsection{The Mixture Rule}
+The need for additional rule arises from the case when neither all equations
+begin with variable nor with constructor, hence the name - mixture rule. Here
+is an example of function that causes such situation to occur:
+\begin{lstlisting}
+length (x : xs) = 1 + length xs;
+length empty = 0
+\end{lstlisting}
+After transforming this function we'll get:
+\begin{lstlisting}[label=lst:mixture_length, mathescape=true,
+  caption={Mixture rule application.}]
+matchEquations [$v_{1}$]
+               [([Cons x xs], 1 + length xs),
+                ([Nil], 0)]
+\end{lstlisting}
+When such situation occurs, pattern matching algorithm partitions the set of
+equations into subsets in a way that each partition contains only elements of
+the same type, i.e. In each partition there are only elements that are either
+constructors or variables or numbers, etc. This logic is implemented by
+\texttt{partition} function in \textit{Utils.hs} module. Once the partitioning
+is done it's easy to work out other details. The \texttt{matchEquations} call
+from Listing~\ref{lst:mixture_length} is equivalent to following one:
+\begin{lstlisting}[mathescape=true]
+matchEquations [$v_{1}$]
+               [([Cons x xs], 1 + length xs)]
+               matchEquations [$v_{1}$]
+                              [([Nil], 0)]
+                              Error
+\end{lstlisting}
+After evaluating each of the \texttt{matchEquations} calls the length function
+will look like this:
+\begin{lstlisting}[mathescape=true]
+length = $\lambda v_{1}$
+    case $v_{1}$ of
+        Cons $v_{1}$ $v_{2}$ -> 1 + length $v_{2}$
+        Nil       -> 0
+\end{lstlisting}
+
+
+\subsubsection{The Empty Rule}
+Eventually, after applying the previous rules, our algorithm will run into a
+situation where the variable list \texttt{vs} is empty, such as the one at
+Listing~\ref{lst:constructor_rule} in the case for \texttt{Nil} constructor:
+\begin{lstlisting}
+    matchEquations [] [] Error
+\end{lstlisting}
+In this case it is equal to \texttt{Error} expression.
 
 
 \section{Transforming \texttt{lambda} abstractions}
