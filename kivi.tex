@@ -657,27 +657,86 @@ compile patterns more efficiently. In order to see a more detailed analysis
 refer to Chapter 5 of \cite{jones87}.
 
 \subsubsection{Pattern-matching Lambda Abstractions}
-In Lambda Calculus, regular lambda abstraction is an expression of the
+In lambda calculus, regular lambda abstraction is an expression of the
 following form:
 \begin{lstlisting}[mathescape=true]
-$\lambda$x.t
+$\lambda x.t$
 \end{lstlisting}
-where \texttt{x} represents a \textit{variable} and \texttt{t} stands for
+where \textit{x} represents a \textit{variable} and \textit{t} stands for
 \textit{term}. Intuitively, a lambda abstraction is an anonymous function that
-takes a single input, and the \(\lambda\) is said to bind \texttt{x} in
-\texttt{t}, and an application \texttt{ts} represents the application of input
-\texttt{s} to some function \texttt{t}. In the lambda calculus, functions are
+takes a single input, and the \(\lambda\) is said to bind \textit{x} in
+\textit{t}, and an application \textit{ts} represents the application of input
+\textit{s} to some function \textit{t}. In the lambda calculus, functions are
 taken to be first class values, so functions may be used as the inputs to other
 functions, and functions may return functions as their outputs.
 
+\subsubsection{Free variables}
+\label{sec:free_variable}
+A free variable is a notation that specifies places in an expression where
+substitution may take place. The idea is related to a placeholder (a symbol
+that will later be replaced by some literal string), or a wildcard character
+that stands for an unspecified symbol.
+In computer programming, a free variable is a variable referred to in a
+function that is not a local variable nor an argument of that function:
+
 The difference between regular and pattern-matching lambda abstractions lies in
-a fact that instead of variable \texttt{x} on the left side a pattern might be
+a fact that instead of variable $x$ on the left side a pattern might be
 used. So it might look like that:
 \begin{lstlisting}[mathescape=true]
-$\lambda$p.t
+$\lambda p.t$
 \end{lstlisting}
-where \texttt{p} is a pattern\footnote{Variable is also considered as a
+where $p$ is a pattern\footnote{Variable is also considered as a
 pattern, so regular lambda abstractions form a subset of pattern-matching ones.}
+
+\subsubsection{Translating function equations to pattern-matching lambda
+abstractions}
+For the purpose of further explanations lets consider the following function
+definition:
+
+\begin{lstlisting}[mathescape=true]
+$f p_{1} = e_{1}$
+$f p_{2} = e_{2}$
+   $\vdots$
+$f p_{n} = e_{n}$
+\end{lstlisting}
+
+The pattern matching will be executed from top to bottom until some of them
+matches or none of them matches. In the first situation the value of an
+expression on the right hand side of matched pattern should be returned and
+none of the following patterns should be matched against. In the second one an
+error should be reported that no matching branch was found. With this in mind
+we can translate the definition of $f$ into following one:
+
+\begin{lstlisting}[mathescape=true]
+$f = \lambda x.(((\lambda p_{1}'.e_{1}') x)\:[]$
+      $((\lambda p_{2}'.e_{2}') x)\:[]$
+          $\vdots$
+      $((\lambda p_{n}'.e_{n}') x)\:[]$
+      $PatternMatchingError$
+\end{lstlisting}
+Here, $x$ is a newly introduced variable name to temporarily hold the argument
+passed to $f$. The $x$ must not be free in any $e_{n}$ in terms of free
+variable definition. Apostrophe means that an expression or pattern has been
+translated too. The $[]$ represents an infix function that chooses the next
+pattern to match against in case of current pattern's failure.
+
+Lets see our translation in action taking as an example the \texttt{map}
+function:
+\begin{lstlisting}
+map f [] = [];
+map f (x : xs) = ((f x) : (map f xs))
+\end{lstlisting}
+The result of such translation would be following:
+\begin{lstlisting}[mathescape=true]
+$map = \lambda f.\lambda xs.(((\lambda Nil.Nil)\:xs)\:[]$
+           $((\lambda (Cons\:y\:ys).(Cons\:(f\:x)\:(map\:f\:ys)))\:xs)\:[]$
+           $PatternMatchingError$
+\end{lstlisting}
+In this example $PatternMatchingError$ will never be returned because the set
+of constructors $Nil$ and $Cons$ covers the whole domain of constructors for
+$List$ datatype. It is possible however to construct an example that will cause
+that error to occur.
+
 
 \section{Transforming \texttt{lambda} abstractions}
 \section{Transforming \texttt{let} expressions}
