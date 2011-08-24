@@ -1,5 +1,5 @@
 \documentclass[a4paper]{report}
-%\usepackage{fullpage}
+\usepackage{fullpage}
 \usepackage{alltt}
 \usepackage{listings}
 \usepackage{caption}
@@ -155,6 +155,7 @@ lex' (c : cs) lnum | isDigit c =
 
 
 \section{Syntax analysis}
+\label{sec:syntax_analysis}
 qwfofqw
 efeqw
 f
@@ -523,7 +524,9 @@ precisely what the tagging phase is for. It works in two parts:
 \end{itemize}
 
 The definitions for those functionalities has been placed in
-\textit{AbstractDataTypes.hs} file.
+\textit{AbstractDataTypes.hs} file. This module also contains functionalities
+responsible for querying constructors for tags, names, arities as well as
+finding constructors given the \texttt{DataType} instance.
 
 
 \section{Pattern Matching}
@@ -728,9 +731,9 @@ map f (x : xs) = ((f x) : (map f xs))
 \end{lstlisting}
 The result of such translation would be following:
 \begin{lstlisting}[mathescape=true]
-$map = \lambda f.\lambda xs.(((\lambda Nil.Nil)\:xs)\:[]$
-           $((\lambda (Cons\:y\:ys).(Cons\:(f\:x)\:(map\:f\:ys)))\:xs)\:[]$
-           $PatternMatchingError$
+map = $\lambda$f.$\lambda$xs.((($\lambda$Nil.Nil) xs) []
+              (($\lambda$(Cons y ys).(Cons (f x) (map f ys))) xs) []
+              Error
 \end{lstlisting}
 In this example $PatternMatchingError$ will never be returned because the set
 of constructors $Nil$ and $Cons$ covers the whole domain of constructors for
@@ -755,14 +758,14 @@ $f = \lambda v_{1}.\lambda v_{2} \dots \lambda v_{n}.((\lambda p_{1,1}'.\lambda.
               $PatternMatchingError$
 \end{lstlisting}
 
-Here's the point where the pattern matching algorithm starts its work. The goal
-is to translate this form into one using \texttt{case} expressions. The code
-responsible for this task has been placed in \textit{PatternMatching.hs} module
-and will be used as a reference. The heart of algorithm is formed by
-\texttt{match*} set of mutually recursive functions, specifically
-\texttt{matchSc} is the one that performs pattern matching on supercombinators,
-and \texttt{matchEquations} matches function definition equations.
-\texttt{matchEquations} has the following type signature:
+We've arrived to the point where the pattern matching algorithm starts its
+work. The goal is to translate this form into one that uses \texttt{case}
+expressions. The code responsible for this task has been placed in
+\textit{PatternMatching.hs} module and will be used as a reference. The heart
+of algorithm is formed by \texttt{match*} set of mutually recursive functions,
+specifically \texttt{matchSc} is the one that performs pattern matching on
+supercombinators, and \texttt{matchEquations} matches function definition
+equations. \texttt{matchEquations} has the following type signature:
 
 \begin{lstlisting}
 matchEquations :: NameSupply
@@ -772,61 +775,115 @@ matchEquations :: NameSupply
                -> [Equation]
                -> Expr Pattern
                -> (NameSupply, Expr Pattern)
-matchEquations ns dts n [] eqs def
+matchEquations ns dts n vs eqs def
 \end{lstlisting}
-
 where
 \begin{itemize}
   \item \texttt{ns}: Name supply for generating new unique names for
-    introduced variables
+    introduced variables. The core logic is implemented in
+    \textit{NameSupply.hs} module. It provides a generic facility to generate
+    unique names and is used across many modules.
   \item \texttt{dts}: A set of defined data types needed later in constructor
-    rule (see ~\ref{sec:constructor_rule})
+    rule (see ~\ref{sec:constructor_rule}). As shown below \texttt{DataType}
+    instances consist of name and list of \texttt{Constructor} instances.
+    \texttt{Constructor}s in turn are built from name, tag and arity:
+
+\begin{lstlisting}
+type DataType = (Name, [Constructor])
+type Constructor = (Name, Int, Int)
+\end{lstlisting}
+
   \item \texttt{n}: The length of the list of argument variables
-  \item \texttt{vs}: A list of argument variables
+  \item \texttt{vs}: A list of argument variables. These names are generated
+    with the help of \texttt{NameSupply} instance.
   \item \texttt{eqs}: Function equations. They consist of list of patterns as
     well as expression body:
 \begin{lstlisting}
-  type Equation = ([Pattern], Expr Pattern)
+type Equation = ([Pattern], Expr Pattern)
 \end{lstlisting}
+\texttt{Expr Pattern} is a data type for representing expressions that contains
+patterns. It uses a parametrized type \texttt{Expr a} where the parameter
+\texttt{a} represents type that can be used as function arguments, left-hand
+sides of let(rec) bindings, etc. It was previously described in
+Section~\ref{sec:syntax_analysis}.
+To give an example of how such expression with patterns might look like, let me
+show you this \texttt{case} expression:
+\begin{lstlisting}
+case [1] of
+    []       -> 0;
+    (x : xs) -> x
+\end{lstlisting}
+Syntax analyser will transform this source code into the following internal AST
+representation\footnote{\texttt{EConstr 2 0} represents a \texttt{Nil}
+constructor, whereas \texttt{EConstr 3 2} stands for \texttt{Cons} constructor.}:
+\begin{lstlisting}
+ECaseConstr ((EConstr 3 2 (ENum 1)) (EConstr 2 0))
+            [(PConstr 2 0 [], ENum 0),
+             (PConstr 3 2 [PVar x, PVar xs], EVar x)]
+\end{lstlisting}
+
+\texttt{Pattern} type instances on the other hand represents patterns itself.
+Patterns might be numbers, variables, constructors or special entities standing
+for patterns chosen when none of other branches match. Below, the definition of
+\texttt{Pattern} type is presented:
+\begin{lstlisting}
+data Pattern = PNum Int
+             | PVar Name
+             | PChar Int
+             | PConstrName Name [Pattern]
+             | PConstr Int Int [Pattern]
+             | PDefault
+\end{lstlisting}
+
+
   \item \texttt{def}: The default expression to evaluate when none of patterns
     matches
 \end{itemize}
 
-It works according to three rules depending on the type of currently considered
-equation: the variable, constructor, mixture and empty rules. They are described in
-next sections. Function \texttt{classifyEquation} returns this type given the
-equation.
+\texttt{matchEquations} function work according to four rules: the variable,
+constructor, mixture and empty ones. The problem of determining which is
+applicable given the current state, is solved by looking at first elements of
+equations list. Depending on the type of currently considered equation, the
+corresponding rule is applied. Helper function \texttt{classifyEquation}
+returns the type of equation based on its first element. Following sections
+describe each rule in more detail, as well as present a few hopefully
+clarifying examples.
+
+Examples in the rest of this section contains a simplified calls to
+\texttt{matchEquations} function, where only \texttt{vs}, \texttt{eqs} and
+\texttt{def} arguments are presented. The rest of them plays rather a minor
+role in understanding the behaviour of algorithm.
+
 
 \subsubsection{The Variable Rule}
 This rule applies when every equation begins with a variable pattern. In such
 case it is possible to remove that variable from every equation and also remove
 the corresponding argument variable from \texttt{vs} list. After that we should
-transform every expression corresponding to that pattern by one where every
+transform every expression corresponding to that pattern into one, where every
 occurence of removed variable is substituted with the corresponding variable
 from \texttt{vs} list. This behaviour is implemented by \texttt{matchVar}
 function.
-Our previous example - the \texttt{map} function eventually runs into situation
+Our previous example, the \texttt{map} function eventually runs into a situation
 where variable rule is applicable\footnote{This is a simplified call to
 \texttt{matchEquations} where not all arguments are present}:
 
 \begin{lstlisting}[mathescape=true]
-matchEquations
-    [$v_{1}$, $v_{2}$]
-    [([f, Nil], Nil),
-     ([f, Cons y ys], Cons (f y) (map f xs))]
-    Error
+matchEquations [$v_{1}$, $v_{2}$]
+               [([f, Nil], Nil),
+                ([f, Cons y ys], Cons (f y) (map f xs))]
+               Error
 \end{lstlisting}
 After applying the variable rule it would have such form:
 \begin{lstlisting}[label=lst:variable_rule, caption={State after applying
   variable rule.}, mathescape=true]
-matchEquations
-    [$v_{2}$]
-    [([Nil], Nil),
-     ([Cons y ys, Cons ($v_{1}$ y) (map $v_{1}$ xs)])]
-    Error
+matchEquations [$v_{2}$]
+               [([Nil], Nil),
+                ([Cons y ys, Cons ($v_{1}$ y) (map $v_{1}$ xs)])]
+               Error
 \end{lstlisting}
 
 \subsubsection{The Constructor Rule}
+\label{sec:constructor_rule}
 Similarly constructor rule is applied when every equation begins with
 constructors. Equations are groupped together according to the constructor and
 a case expression is introduced in order to choose the right branch. Each group
@@ -875,9 +932,9 @@ from Listing~\ref{lst:mixture_length} is equivalent to following one:
 \begin{lstlisting}[mathescape=true]
 matchEquations [$v_{1}$]
                [([Cons x xs], 1 + length xs)]
-               matchEquations [$v_{1}$]
-                              [([Nil], 0)]
-                              Error
+               (matchEquations [$v_{1}$]
+                               [([Nil], 0)]
+                               Error)
 \end{lstlisting}
 After evaluating each of the \texttt{matchEquations} calls the length function
 will look like this:
@@ -894,12 +951,14 @@ Eventually, after applying the previous rules, our algorithm will run into a
 situation where the variable list \texttt{vs} is empty, such as the one at
 Listing~\ref{lst:constructor_rule} in the case for \texttt{Nil} constructor:
 \begin{lstlisting}
-    matchEquations [] [] Error
+    matchEquations [] [] expr
 \end{lstlisting}
-In this case it is equal to \texttt{Error} expression.
+When algorithm arrives into such state, the result is equal to \texttt{expr}.
 
+According to the rules above one can transform every pattern-matching lambda
+abstraction to a corresponding (and semantically identical) \texttt{case}
+expression. This follows directly from the description of rules.
 
-\section{Transforming \texttt{lambda} abstractions}
 \section{Transforming \texttt{let} expressions}
 \label{sec:letrec_transform}
 \section{Transforming \texttt{case} expressions}
