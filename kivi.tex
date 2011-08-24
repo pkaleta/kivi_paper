@@ -5,6 +5,32 @@
 \usepackage{caption}
 \usepackage{url}
 \usepackage{tikz}
+\usetikzlibrary{arrows,positioning} 
+\tikzset{
+    %Define standard arrow tip
+    >=stealth',
+    %Define style for boxes
+    rect/.style={
+           rectangle,
+           rounded corners,
+           draw=black, very thick,
+           text width=6.5em,
+           minimum height=2em,
+           text centered},
+    circ/.style={
+           circle,
+           rounded corners,
+           draw=black, very thick,
+           text width=6.5em,
+           minimum height=2em,
+           text centered},
+    % Define arrow style
+    pil/.style={
+           ->,
+           thick,
+           shorten <=2pt,
+           shorten >=2pt,}
+}
 %\usepackage{courier}
 
 \begin{document}
@@ -122,6 +148,8 @@ reading the code easier. Thus parsing consist of:
     tokens and building an \textit{Abstract Syntax Tree} from it.
 \end{itemize}
 
+
+TODO: Diagram of how parsing process work
 TODO: Grammar of the language
 
 This two-phase process is implemented as\footnote{Where \texttt{PatProgram}
@@ -156,12 +184,69 @@ lex' (c : cs) lnum | isDigit c =
 
 \section{Syntax analysis}
 \label{sec:syntax_analysis}
-qwfofqw
-efeqw
-f
-TODO: jak powstaje drzewo ast przedstawic tutaj datatype ktory sluzy do
+Once we can accept tokens from lexer it's time to build a hierarchical
+structure called \textit{Abstract Syntax Tree} (or AST for short) from it. ASTs
+are tree representations of abstract syntactic structures written in
+programming language. Nodes in such tree represent different constructs from
+the source code. The word abstract is used because not every detail from source
+code has its counterpart in the AST, some unnecessary details are ommited.
+
+Data type for representing Kivi's Abstract Syntax Trees is defined in
+\textit{Common.hs} module and it is a parametrized data type. This concept is
+a similar idea to templates in C++ or generics in Java. It allows the code to
+be reused and forms the basic idea of \textit{parametric poylmorphism}
+(see \cite{website:parametric_polymorphism}). The data type definition is
+following:
+\begin{lstlisting}
+data Expr a = EVar Name
+            | ENum Int
+            | EChar Int
+            | EConstrName Name
+            | EConstr Int Int
+            | EAp (Expr a) (Expr a)
+            | ELet IsRec [Defn a] (Expr a)
+            | ECase (Expr a) [Alter Pattern a]
+            | ECaseSimple (Expr a) [Alter Int a]
+            | ECaseConstr (Expr a) [Alter Int a]
+            | ELam [a] (Expr a)
+            | EError String
+            | ESelect Int Int Name
+\end{lstlisting}
+The \texttt{Expr} data type is parametrized with respect to its binders.
+Binders, as name suggests, are used when the variable is being bound to a
+value. This happens in lambda abstractions, \texttt{let} and \texttt{letrec}
+definitions as well as in \texttt{case} expressions. To give an e example of
+how a simple source code construct will look, when parsed to AST,  lets look at
+the following example:
+\begin{lstlisting}
+let
+    x = 1;
+    y = 2
+in
+    x + y
+\end{lstlisting}
+The result returned from \texttt{parse} function will be\footnote{In reality
+the output from \texttt{parse} is more complicated because it returns programs
+with patterns. However in order to grasp the concept of parametrized
+\texttt{Expr} type its easier to forget about that fact for a while.}:
+\begin{lstlisting}
+  ELet False
+       [('x', ENum 1), ('y', ENum 2)]
+       EAp (EAp (EVar '+') (EVar 'x')) (EVar 'y')
+\end{lstlisting}
+
+Defining expressions in this way greatly reduces the amount of code to be
+written. For example, initially parser returns programs with patterns in them,
+but later phases of compilation process gets rid of them by transforming
+program into a representation that uses \texttt{case} expressions instead.
+Thanks to parametrized definition of \texttt{Expr} data type we could define
+parse as returning \texttt{Expr Pattern}, whereas later phases return
+\texttt{Expr String}.
+
+\section{Implementation of Parser}
+TODO: tu mozna napisac jak dziala parser o ile za duzo nie wyjdzie reszty
 \subsection{Analysing patterns}
-trzymania ast
+TODO: co tu mialo byc?
 
 
 \chapter{Translation to Lambda Calculus}
@@ -382,12 +467,12 @@ Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))
   \centering
     \begin{tikzpicture}
       \tikzstyle{every node}=[circle,draw]
-      \node {}
-          child { node {1} }
+      \node[circle] {}
+          child { node[circle] {1} }
           child {
-            node {}
-              child { node {2} }
-              child { node {3} }
+            node[circle] {}
+              child { node[circle] {2} }
+              child { node[circle] {3} }
           };
     \end{tikzpicture}
   \caption{Example of a tree.}
@@ -427,7 +512,7 @@ that you cannot modify its contents. Instead you create new values which may
 differ from previous ones. }
 Kivi provides a variety of way to define a list. First of all lists can be seen
 as regular Data Type. Thus there are two constructors for a \texttt{List}
-datatype. \texttt{Nil} and \texttt{Cons}:
+data type. \texttt{Nil} and \texttt{Cons}:
 
 \begin{lstlisting}
 data List = Nil 0 | Cons 2
@@ -737,7 +822,7 @@ map = $\lambda$f.$\lambda$xs.((($\lambda$Nil.Nil) xs) []
 \end{lstlisting}
 In this example $PatternMatchingError$ will never be returned because the set
 of constructors $Nil$ and $Cons$ covers the whole domain of constructors for
-$List$ datatype. It is possible however to construct an example that will cause
+$List$ data type. It is possible however to construct an example that will cause
 that error to occur.
 
 \subsubsection{Pattern matching algorithm}
@@ -955,6 +1040,7 @@ Listing~\ref{lst:constructor_rule} in the case for \texttt{Nil} constructor:
 \end{lstlisting}
 When algorithm arrives into such state, the result is equal to \texttt{expr}.
 
+\subsubsection{Summary}
 According to the rules above one can transform every pattern-matching lambda
 abstraction to a corresponding (and semantically identical) \texttt{case}
 expression. This follows directly from the description of rules.
