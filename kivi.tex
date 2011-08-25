@@ -744,7 +744,7 @@ expressions instead of pattern-matching lambda abstractions, thus allowing to
 compile patterns more efficiently. In order to see a more detailed analysis
 refer to Chapters 4 and 5 of \cite{jones87}.
 
-\subsubsection{Pattern-matching Lambda Abstractions}
+\subsection{Pattern-matching Lambda Abstractions}
 In lambda calculus, regular lambda abstraction is an expression of the
 following form:
 \begin{lstlisting}[mathescape=true]
@@ -767,7 +767,7 @@ $\lambda p.t$
 where $p$ is a pattern\footnote{Variable is also considered as a
 pattern, so regular lambda abstractions form a subset of pattern-matching ones.}
 
-\subsubsection{Free variables}
+\subsection{Free variables}
 \label{sec:free_variable}
 A free variable is a notation that specifies places in an expression where
 substitution may take place. The idea is related to a placeholder (a symbol
@@ -776,7 +776,7 @@ that stands for an unspecified symbol.
 In computer programming, a free variable is a variable referred to in a
 function that is not a local variable nor an argument of that function:
 
-\subsubsection{Translating function equations to pattern-matching lambda
+\subsection{Translating function equations to pattern-matching lambda
 abstractions}
 For the purpose of further explanations lets consider the following function
 definition:
@@ -825,7 +825,7 @@ of constructors $Nil$ and $Cons$ covers the whole domain of constructors for
 $List$ data type. It is possible however to construct an example that will cause
 that error to occur.
 
-\subsubsection{Pattern matching algorithm}
+\subsection{Pattern matching algorithm}
 \label{sec:pattern_matching_algorithm}
 
 In general a multi-pattern function definition in Kivi of the form:
@@ -941,7 +941,7 @@ Examples in the rest of this section contains a simplified calls to
 role in understanding the behaviour of algorithm.
 
 
-\subsubsection{The Variable Rule}
+\subsection{The Variable Rule}
 This rule applies when every equation begins with a variable pattern. In such
 case it is possible to remove that variable from every equation and also remove
 the corresponding argument variable from \texttt{vs} list. After that we should
@@ -968,7 +968,7 @@ matchEquations [$v_{2}$]
                Error
 \end{lstlisting}
 
-\subsubsection{The Constructor Rule}
+\subsection{The Constructor Rule}
 \label{sec:constructor_rule}
 Similarly constructor rule is applied when every equation begins with
 constructors. Equations are groupped together according to the constructor and
@@ -993,7 +993,7 @@ case $v_{2}$ of
                                 Error
 \end{lstlisting}
 
-\subsubsection{The Mixture Rule}
+\subsection{The Mixture Rule}
 The need for additional rule arises from the case when neither all equations
 begin with variable nor with constructor, hence the name - mixture rule. Here
 is an example of function that causes such situation to occur:
@@ -1032,7 +1032,7 @@ length = $\lambda v_{1}$
 \end{lstlisting}
 
 
-\subsubsection{The Empty Rule}
+\subsection{The Empty Rule}
 Eventually, after applying the previous rules, our algorithm will run into a
 situation where the variable list \texttt{vs} is empty, such as the one at
 Listing~\ref{lst:constructor_rule} in the case for \texttt{Nil} constructor:
