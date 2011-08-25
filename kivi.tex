@@ -4,33 +4,8 @@
 \usepackage{listings}
 \usepackage{caption}
 \usepackage{url}
-\usepackage{tikz}
-\usetikzlibrary{arrows,positioning} 
-\tikzset{
-    %Define standard arrow tip
-    >=stealth',
-    %Define style for boxes
-    rect/.style={
-           rectangle,
-           rounded corners,
-           draw=black, very thick,
-           text width=6.5em,
-           minimum height=2em,
-           text centered},
-    circ/.style={
-           circle,
-           rounded corners,
-           draw=black, very thick,
-           text width=6.5em,
-           minimum height=2em,
-           text centered},
-    % Define arrow style
-    pil/.style={
-           ->,
-           thick,
-           shorten <=2pt,
-           shorten >=2pt,}
-}
+\usepackage{amsthm}
+\newtheorem{definition}{Definition}[chapter]
 %\usepackage{courier}
 
 \begin{document}
@@ -84,7 +59,9 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 \begin{abstract}
   \normalsize
   \center
+
   TODO: napisac
+
   \begin{flushright}
     Piotr Kaleta
   \end{flushright}
@@ -150,6 +127,7 @@ reading the code easier. Thus parsing consist of:
 
 
 TODO: Diagram of how parsing process work
+
 TODO: Grammar of the language
 
 This two-phase process is implemented as\footnote{Where \texttt{PatProgram}
@@ -244,8 +222,11 @@ parse as returning \texttt{Expr Pattern}, whereas later phases return
 \texttt{Expr String}.
 
 \section{Implementation of Parser}
+
 TODO: tu mozna napisac jak dziala parser o ile za duzo nie wyjdzie reszty
+
 \subsection{Analysing patterns}
+
 TODO: co tu mialo byc?
 
 
@@ -261,11 +242,12 @@ consist of ways to translate the first form into another.
 \section{Syntax}
 Source of \textit{Kivi}'s program consist of set of
 \textit{supercombinators}\cite{wiki:supercombinator}. Supercombinator is an
-expression consisting of either constants or other supercombinators and
-doesn't contain any free variables in its body. Supercombinators might have
-arguments, and those which doesn't are called \textit{constant applicative forms}
-(or CAFs for short). Listing~\ref{supercombinator_ex} shows the simple
-supercombinator with one argument.
+expression consisting of either constants or other supercombinators and doesn't
+contain any free variables (see Definition~\ref{def:free_variable}) in its
+body. Supercombinators might have arguments, and those which doesn't are called
+\textit{constant applicative forms} (or CAFs for short).
+Listing~\ref{supercombinator_ex} shows the simple supercombinator with one
+argument.
 
 \begin{lstlisting}[label=supercombinator_ex,caption={Simple supercombinator.}]
 sqr x = x * x
@@ -293,7 +275,12 @@ fib n =
 main = fib 10
 \end{lstlisting}
 
-% TODO: zmienic \ref{xxx} na \ref{lst:xxx}
+\subsection{If expressions}
+
+TODO: write
+
+TODO: zmienic \ref{xxx} na \ref{lst:xxx}
+
 \subsection{Local bindings}
 Supercombinators provides the ability to define local definitions using
 \texttt{let} keyword. The scope of variables defined using \texttt{let} is
@@ -409,7 +396,9 @@ is \texttt{Cons}. If argument matches, the \textit{tail} of the list is bound to
 \texttt{xs} variable and right hand side of that branch is evaluated.
 
 \subsection{Function application and Currying}
-% TODO: write
+
+TODO: write
+
 \section{Lambda Calculus}
 
 \section{Translation to Lambda Calculus}
@@ -465,16 +454,9 @@ Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))
 
 \begin{figure}[h!]
   \centering
-    \begin{tikzpicture}
-      \tikzstyle{every node}=[circle,draw]
-      \node[circle] {}
-          child { node[circle] {1} }
-          child {
-            node[circle] {}
-              child { node[circle] {2} }
-              child { node[circle] {3} }
-          };
-    \end{tikzpicture}
+
+  TODO: przyklad
+
   \caption{Example of a tree.}
   \label{fig:tree}
 \end{figure}
@@ -769,10 +751,17 @@ pattern, so regular lambda abstractions form a subset of pattern-matching ones.}
 
 \subsection{Free variables}
 \label{sec:free_variable}
-A free variable is a notation that specifies places in an expression where
-substitution may take place. The idea is related to a placeholder (a symbol
-that will later be replaced by some literal string), or a wildcard character
-that stands for an unspecified symbol.
+
+For the purpose of further deliberations I'll present the definition of
+\textit{free variables}:
+\begin{definition}
+  \label{def:free_variable}
+  A free variable is a notation that specifies places in an expression where
+  substitution may take place. The idea is related to a placeholder (a symbol
+  that will later be replaced by some literal string), or a wildcard character
+  that stands for an unspecified symbol.
+\end{definition}
+
 In computer programming, a free variable is a variable referred to in a
 function that is not a local variable nor an argument of that function:
 
@@ -1088,15 +1077,18 @@ characteristic that distinguishes between the two aforementioned types of
 \texttt{let(rec)} bindings. In short refutable bindings are those which contain
 at least one refutable pattern and thus may fail during evaluation. On the
 other hand irrefutable ones are those in which a failure cannot occur, thus
-when all patterns are irrefutable. A pattern is irrefutable if any of these
-conditions apply:
+when all patterns are irrefutable.
 
-\begin{itemize}
-  \item It is a simple pattern (i.e. number pattern, character pattern, etc.)
-  \item It is a variable pattern
-  \item It has the form ($c$ $p_{1}$ $p_{2}$ \ldots $p_{n}$), where $c$ is
-    constructor and $p_{1}$ $p_{2}$ \ldots $p_{n}$ are irrefutable patterns
-\end{itemize}
+\begin{definition}
+  \label{def:irrefutable_pattern}
+  A pattern is irrefutable if any of these conditions apply:
+  \begin{itemize}
+    \item It is a simple pattern (i.e. number pattern, character pattern, etc.)
+    \item It is a variable pattern
+    \item It has the form ($c$ $p_{1}$ $p_{2}$ \ldots $p_{n}$), where $c$ is
+      constructor and $p_{1}$ $p_{2}$ \ldots $p_{n}$ are irrefutable patterns
+  \end{itemize}
+\end{definition}
 The function \texttt{isRefutable} is implemented in exactly this fashion.
 
 \subsection{Conformality transformation}
@@ -1165,12 +1157,12 @@ The implementation of conformality transformation has been implemented as
 \subsection{Transforming irrefutable \texttt{let}s into Simple \texttt{let}s}
 As previously mentioned irrefutable \texttt{let} is such that contain only
 irrefutable patterns as binders. There are three cases in which we consider a
-pattern irrefutable according to definition presented in
-Section~\ref{sec:irrefutable_patterns}. In the first two patterns on the
-left-had side of definition might be either variable or simple
-patterns(numbers, characters, etc.). In such case these patterns are already
-simple, so there's nothing else to do. On the other hand when patterns are
-irrefutable constructor patterns they are take the following form:
+pattern irrefutable according to Definition~\ref{def:irrefutable_pattern}. In
+the first two patterns on the left-had side of definition might be either
+variable or simple patterns(numbers, characters, etc.). In such case these
+patterns are already simple, so there's nothing else to do. On the other hand
+when patterns are irrefutable constructor patterns they are take the following
+form:
 \begin{lstlisting}[mathescape=true]
   let ($c$ $p_1, p_2 \ldots, p_n$) = $expr$ in $\ldots$
 \end{lstlisting}
@@ -1215,7 +1207,7 @@ letrec ($c_1$ $p_{1,1}, p_{1,2} \ldots, p_{1,n1}$) = $e_1$
        ($c_2$ $p_{2,1}, p_{2,2} \ldots, p_{2,n2}$) = $e_2$
                 $\vdots$
        ($c_k$ $p_{k,1}, p_{k,2} \ldots, p_{k,nk}$) = $e_k$
-in $\ldots$
+in $expr$
 \end{lstlisting}
 is going to be translated into following expression:
 \begin{lstlisting}[mathescape=true]
@@ -1233,7 +1225,7 @@ letrec
     $p_{k,1}$ = $Select\mbox{-}nk\mbox{-}1$ $v_k$;
               $\vdots$
     $p_{nk,1}$ = $Select\mbox{-}nk\mbox{-}nk$ $v_k$;
-in $\ldots$
+in $expr$
 \end{lstlisting}
 
 \subsection{Summary}
@@ -1247,6 +1239,83 @@ important to run the conformality transform before pattern matching phase.
 
 \section{Transforming \texttt{case} expressions}
 \section{Dependency Analysis}
+Dependency analysis is a process of splitting up \texttt{let(rec)} bindings
+into minimial-sized groups and preferring \texttt{let} over \texttt{letrec}
+where possible. The reason for this choice is because the non-recursive version
+of binding can be implemented more efficiently. The fact that \texttt{let(rec)}
+expressions are not always as optimal as they could, is twofold:
+\begin{itemize}
+  \item First, programmer might have ommited the fact that the
+    \texttt{let(rec)} expression he implemented is not recursive at all.
+  \item Previous phases\footnote{as well as passes that are not yet available
+    in Kivi} might be unnecesarily pessimistic, for example \texttt{where}
+    clauses are always transformed into recursive \texttt{let}s for simplicity
+    reasons.
+\end{itemize}
+Consider the following Kivi binding as an illustration of that fact:
+\begin{lstlisting}[label=lst:letrec_dependency_example,caption={Example of
+  \texttt{let(rec)} before dependency analysis.}]
+letrec
+    p       = 3;
+    q       = 7;
+    x       = p + q;
+    fac n   = if (n == 0) 1 (n * fac(n-1));
+    res     = fac x;
+    gcd a b = if (b == 0) a (gcd b (a % b))
+in
+    gcd 24 18
+\end{lstlisting}
+After analysing the dependencies and splitting the letrec into minimal
+subgroups the expression will become:
+\begin{lstlisting}
+let
+    p = 3
+let
+    q = 7
+let
+    x = 10
+in letrec
+    fac n = if (n == 0) 1 (n * fac(n-1))
+in letrec
+    gcd a b = if (b == 0) a (gcd b (a % b))
+in let
+    res = fac x
+in
+    gcd 24 18
+\end{lstlisting}
+This section provides an efficient algorithm to perform dependency analysis.
+\subsection{Strongly Connected Components}
+In order to fully understand the role of \textit{strongly connected components}
+in analysing dependencies of a functional program I'll first introduce a few
+definitions that will help with further deliberations.
+\begin{definition}
+A directed graph is a pair G = (V, E) of:
+\begin{itemize}
+  \item a set V, whose elementes are called vertices or nodes,
+  \item a set E of ordered pairs of vertices, called arcs, directed edges, or
+    simply edges.
+\end{itemize}
+\end{definition}
+
+From now on we'll be looking at each \texttt{letrec} expression as an directed
+graph called \textit{dependency graph} defined as follows:
+\begin{definition}
+A dependency graph is a directed graph, where:
+\begin{itemize}
+  \item a set $V$ of vertices is the set of all variables bound by
+    \texttt{letrec}
+  \item there's an edge from vertex representing variable a to vertex
+    representing variable b, if b is present in the right-hand side of
+    binding for a. Formally speaking, if b occurs as a free variable
+    (Definition~\ref{def:free_variable}) definition of a.
+\end{itemize}
+\end{definition}
+
+The dependency graph for our running example from
+Listing~\ref{lst:letrec_dependency_example} will look like this:
+
+TODO: graf dla tego przykladu
+
 \section{Lambda Lifting}
 \section{Lazy Lambda Lifting}
 \section{Type Checker}
