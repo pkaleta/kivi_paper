@@ -173,7 +173,7 @@ The heart of \textit{lexical analyser} is the \texttt{lex'} function. It works
 by classifying the parts of remaining input based on first characters.
 Building number tokens may be a nice example of how it works:
 
-\begin{lstlisting}[label=lex_comment,caption={Building tokens from numbers.}]
+\begin{lstlisting}[label=lst:lex_comment,caption={Building tokens from numbers.}]
 lex' (c : cs) lnum | isDigit c =
     (lnum, numToken) : lex' restCs lnum
         where
@@ -732,10 +732,10 @@ perform pattern matching in more optimized fashion we have to transform into
 the following form:
 
 \begin{lstlisting}[mathescape=true]
-$map = \lambda f.\lambda xs.$
-    $case\:xs\:of$
-        $Nil\:\:\:\:\:\:\:\:\:\:\:\: \rightarrow Nil$
-        $Cons\:y\:ys \rightarrow Cons\:(f\:y)\:(map\:f\:ys)$
+map = $\lambda$ f.$\lambda$ xs.
+    case xs of
+        Nil       -> Nil
+        Cons y ys -> Cons (f y) (map f ys)
 \end{lstlisting}
 
 The remaining part of this section contains a description of an algorithm that
@@ -826,6 +826,7 @@ $List$ data type. It is possible however to construct an example that will cause
 that error to occur.
 
 \subsubsection{Pattern matching algorithm}
+\label{sec:pattern_matching_algorithm}
 
 In general a multi-pattern function definition in Kivi of the form:
 \begin{lstlisting}[mathescape=true]
@@ -1036,7 +1037,7 @@ Eventually, after applying the previous rules, our algorithm will run into a
 situation where the variable list \texttt{vs} is empty, such as the one at
 Listing~\ref{lst:constructor_rule} in the case for \texttt{Nil} constructor:
 \begin{lstlisting}
-    matchEquations [] [] expr
+matchEquations [] [] expr
 \end{lstlisting}
 When algorithm arrives into such state, the result is equal to \texttt{expr}.
 
@@ -1045,8 +1046,205 @@ According to the rules above one can transform every pattern-matching lambda
 abstraction to a corresponding (and semantically identical) \texttt{case}
 expression. This follows directly from the description of rules.
 
-\section{Transforming \texttt{let} expressions}
+\section{Transforming \texttt{let(rec)} expressions}
 \label{sec:letrec_transform}
+The reason why we need to perform \texttt{let(rec)} transformations is due to
+the fact that letrec binders\footnote{Binders of a \texttt{let(rec)}
+expressions are the left-hand sides of each definition} might contain arbitrary
+patterns in them. This prevents us from using the machinery that would be used
+instead, if those binders were allowed to be simple variables only. This
+section is dedicated to show how the transformation from enriched version of
+\texttt{let} and \texttt{letrec} bindings to a simple lambda calculus work in
+Kivi. Code implementing functionalities from this section has been placed in
+\textit{LetTransformer.hs} module.
+
+The rest of this chapter is devoted to presenting transformations which
+translate a program into one, in which only \textit{simple let(rec)}s are
+present. Simple \texttt{let(rec)}s are such, that their binders contain only
+patterns that are either variable patterns or simple patterns(numbers,
+characters, strings, etc.).
+
+The first step of this process is to perform a \textit{conformality
+transformation} described in Section~\ref{sec:conformality_transformation}.
+Later, general \texttt{let} expressions, are converted into simple
+\texttt{let}s via irrefutable \texttt{let}s, obtained by previous
+transformation. On the other hand general \texttt{letrec}s are first
+transformed into irrefutable \texttt{letrec}s and finally into simple
+\texttt{letrec}s. This process is shown in Figure~\ref{fig:letrec_transform}.
+
+TODO: diagram pokazujacy w jakiej kolejnosci sa aplikowane transformacje.
+
+\subsection{Refutable and irrefutable patterns.}
+\label{sec:irrefutable_patterns}
+We can distinguish two different types of \texttt{let(rec)} bindings:
+\textit{Refutable} and \textit{irrefutable} ones. Let's look at this sample
+\texttt{let} expression:
+\begin{lstlisting}[mathescape=true,label=lst:conformality_check,caption={Pattern matching \texttt{let} binding.}]
+let (Cons x xs) = $expr$ in ...
+\end{lstlisting}
+The problem arises because \texttt{expr} might be evaluated to \texttt{Nil},
+and in such situation this pattern matching will fail. This is precisely the
+characteristic that distinguishes between the two aforementioned types of
+\texttt{let(rec)} bindings. In short refutable bindings are those which contain
+at least one refutable pattern and thus may fail during evaluation. On the
+other hand irrefutable ones are those in which a failure cannot occur, thus
+when all patterns are irrefutable. A pattern is irrefutable if any of these
+conditions apply:
+
+\begin{itemize}
+  \item It is a simple pattern (i.e. number pattern, character pattern, etc.)
+  \item It is a variable pattern
+  \item It has the form ($c$ $p_{1}$ $p_{2}$ \ldots $p_{n}$), where $c$ is
+    constructor and $p_{1}$ $p_{2}$ \ldots $p_{n}$ are irrefutable patterns
+\end{itemize}
+The function \texttt{isRefutable} is implemented in exactly this fashion.
+
+\subsection{Conformality transformation}
+\label{sec:conformality_transformation}
+A \textit{conformality transformation} is an activity to translate the program
+into one that checks for patterns mismatch in \texttt{let(rec)} bindings. It
+will contain only irrefutable \texttt{let(rec)} bindings. We say that such
+program performs a \textit{conformality check}. Lets also mention that such
+transformation is only needed in case of refutable bindings, so there's no need
+to perform this, possibly expensive, computation in when patterns cannot fail.
+So the first step of conformality transformation is partitioning
+\texttt{let(rec)} bindings regarding to their refutability. Once we have all
+patterns that might fail in one place we need to find a way to transform
+\texttt{let(rec)}s into a form that conformality check is done.  Considering
+our running example from Listing~\ref{lst:conformality_check} our compiler
+would transform this expression into:
+\begin{lstlisting}[mathescape=true]
+let (Cons x xs) = let $v_{1}$ = $expr$
+                  in (($\lambda$p.(Cons x xs)) $v_{1}$) [] Error
+\end{lstlisting}
+where $v_{1}$ is newly introduced unique variable.
+
+Based on that observation we could derive the general form of conformality
+transformation from:
+\begin{lstlisting}[mathescape=true]
+let $p_{1}$ = $e_{1}$;
+    $p_{2}$ = $e_{2}$;
+       $\vdots$
+    $p_{n}$ = $e_{n}$
+in $\ldots$
+\end{lstlisting}
+into:
+\begin{lstlisting}[mathescape=true]
+let
+    ($c_{k1}$ $v_{1,1}$ $\ldots$ $v_{1,k1}$) = let $w_{1}$ = $e_{1}$
+                      in (($\lambda p_{1}$.($c_{k1}$ $v_{1,1}$ $\ldots$ $v_{1,k1}$)) $w_{1}$) [] Error
+                               $\vdots$
+    ($c_{kn}$ $v_{n,1}$ $\ldots$ $v_{n,kn}$) = let $w_{n}$ = $e_{n}$
+                      in (($\lambda p_{n}$.($c_{kn}$ $v_{n,1}$ $\ldots$ $v_{n,kn}$)) $w_{n}$) [] Error
+in $\ldots$
+\end{lstlisting}
+where:
+\begin{itemize}
+  \item $c_{ki}$ is a constructor of arity equal to the number of variables
+    bound by pattern $p_{i}$. Lets call the set of such variables $Var(p_{i})$
+  \item $\{v_1, v_2, \ldots, v_n\} = Var(p_i)$
+  \item $w_{i}$ is distinct from every $v \in Var(p_i)$
+\end{itemize}
+The function which calculates the $Var(p_i)$ set is called
+\texttt{getPatternVarNames} and its behaviour is works by collecting already
+seen variable names while recursively traversing the pattern:
+
+\begin{lstlisting}
+getPatternVarNames :: Pattern -> [Name]
+getPatternVarNames (PNum n) = []
+getPatternVarNames (PChar c) = []
+getPatternVarNames (PVar v) = [v]
+getPatternVarNames (PConstr tag arity patterns) = foldl collectVars [] patterns
+    where
+        collectVars vars pattern = vars ++ getPatternVarNames pattern
+\end{lstlisting}
+
+The implementation of conformality transformation has been implemented as
+\texttt{conformalityTransform} in \textit{LetTransformer.hs}.
+
+\subsection{Transforming irrefutable \texttt{let}s into Simple \texttt{let}s}
+As previously mentioned irrefutable \texttt{let} is such that contain only
+irrefutable patterns as binders. There are three cases in which we consider a
+pattern irrefutable according to definition presented in
+Section~\ref{sec:irrefutable_patterns}. In the first two patterns on the
+left-had side of definition might be either variable or simple
+patterns(numbers, characters, etc.). In such case these patterns are already
+simple, so there's nothing else to do. On the other hand when patterns are
+irrefutable constructor patterns they are take the following form:
+\begin{lstlisting}[mathescape=true]
+  let ($c$ $p_1, p_2 \ldots, p_n$) = $expr$ in $\ldots$
+\end{lstlisting}
+where each $p_1, p_2, \ldots, p_n$ are irrefutable patterns. In order to
+convert such expression into a simple \texttt{let}, we can apply the following
+transformation\footnote{Without loss of generality we can assume that each
+\texttt{let} contains only one definition. Every program could be easily
+transformed to conform to this condition.}:
+\begin{lstlisting}[mathescape=true]
+let $v$ = $expr$
+in (let $p_1$ = $Select\mbox{-}r\mbox{-}1$ $v$;
+        $p_2$ = $Select\mbox{-}r\mbox{-}2$ $v$;
+              $\vdots$
+        $p_n$ = $Select\mbox{-}r\mbox{-}n$ $v$
+    in $\ldots$)
+\end{lstlisting}
+Here, $v$ is a newly introduced variable, $r$ is the arity of the $c$
+constructor, whereas each $Select\mbox{-}r\mbox{-}i$ is a function that selects
+the $i^{th}$ component of a constructor with arity $r$. Again a simple example
+should clarify this:
+\begin{lstlisting}[mathescape=true]
+let (Cons x xs) = (Cons 1 (Cons 2 (Cons 3 Nil)))
+\end{lstlisting}
+after applying the aforementioned transformation will be converted into:
+\begin{lstlisting}[mathescape=true]
+let $v$ = (Cons 1 (Cons 2 (Cons 3 Nil)))
+in (let x  = $Select\mbox{-}2\mbox{-}1$ $v$;
+        xs = $Select\mbox{-}2\mbox{-}2$ $v$)
+\end{lstlisting}
+$Select\mbox{-}2\mbox{-}1$ when applied to \texttt{(Cons 1 (Cons 2 (Cons 3
+Nil)))} will yield \texttt{1}, and $Select\mbox{-}2\mbox{-}2$ is going to return
+\texttt{Cons 2 (Cons 3 Nil)}.
+
+\subsection{Transforming irrefutable \texttt{letrec}s into Simple \texttt{letrec}s}
+Transformation from irrefutable \texttt{letrec}s into simple ones is almost
+identical to that concerning \texttt{let}s except from the fact that variables
+from all definitions should be groupped together in order to ensure that
+they're visible from other bindings. Here's the general scheme for such
+conversion:
+\begin{lstlisting}[mathescape=true]
+letrec ($c_1$ $p_{1,1}, p_{1,2} \ldots, p_{1,n1}$) = $e_1$
+       ($c_2$ $p_{2,1}, p_{2,2} \ldots, p_{2,n2}$) = $e_2$
+                $\vdots$
+       ($c_k$ $p_{k,1}, p_{k,2} \ldots, p_{k,nk}$) = $e_k$
+in $\ldots$
+\end{lstlisting}
+is going to be translated into following expression:
+\begin{lstlisting}[mathescape=true]
+letrec
+    $v_1$ = $e_1$;
+    $p_{1,1}$ = $Select\mbox{-}n1\mbox{-}1$ $v_1$;
+              $\vdots$
+    $p_{n1,1}$ = $Select\mbox{-}n1\mbox{-}n1$ $v_1$;
+    $v_2$ = $e_2$;
+    $p_{2,1}$ = $Select\mbox{-}n2\mbox{-}1$ $v_2$;
+              $\vdots$
+    $p_{n2,1}$ = $Select\mbox{-}n2\mbox{-}n2$ $v_2$;
+              $\vdots$
+    $v_k$ = $e_k$;
+    $p_{k,1}$ = $Select\mbox{-}nk\mbox{-}1$ $v_k$;
+              $\vdots$
+    $p_{nk,1}$ = $Select\mbox{-}nk\mbox{-}nk$ $v_k$;
+in $\ldots$
+\end{lstlisting}
+
+\subsection{Summary}
+After all these transformations took place, all binders in every
+\texttt{let(rec)} expressions should become variable pattern in form
+\texttt{PVar v = $expr$} or simple pattern. Now the pattern-matching algorithm,
+described in Section~\ref{sec:pattern_matching_algorithm} can be used because
+it was developed under assumption that left-hand sides of \texttt{let(rec)}
+binders doesn't contain refutable and complex patterns. Therefore it is
+important to run the conformality transform before pattern matching phase.
+
 \section{Transforming \texttt{case} expressions}
 \section{Dependency Analysis}
 \section{Lambda Lifting}
