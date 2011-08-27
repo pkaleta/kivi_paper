@@ -785,11 +785,11 @@ error should be reported that no matching branch was found. With this in mind
 we can translate the definition of $f$ into following one:
 
 \begin{lstlisting}[mathescape=true]
-$f = \lambda x.(((\lambda p_{1}'.e_{1}')\:x)\:[]$
-      $((\lambda p_{2}'.e_{2}')\:x)\:[]$
-          $\vdots$
-      $((\lambda p_{n}'.e_{n}')\:x)\:[]$
-      $PatternMatchingError$
+f = $\lambda$x.((($\lambda p_{1}'$.$e_{1}'$) x) []
+        (($\lambda p_{2}'$.$e_{2}'$) x) []
+              $\vdots$
+        (($\lambda p_{n}'$.$e_{n}'$) x) []
+        Error
 \end{lstlisting}
 Here, $x$ is a newly introduced variable name to temporarily hold the argument
 passed to $f$. The $x$ must not be free in any $e_{n}$ in terms of free
@@ -819,18 +819,18 @@ that error to occur.
 
 In general a multi-pattern function definition in Kivi of the form:
 \begin{lstlisting}[mathescape=true]
-$f\:p_{1,1}\:p_{1,2} \dots p_{1,n} = e_{1}$
-$f\:p_{2,1}\:p_{2,2} \dots p_{2,n} = e_{2}$
-        $\vdots$
-$f\:p_{m,1}\:p_{m,2} \dots p_{m,n} = e_{m}$
+f $p_{1,1}$ $p_{1,2}$ $\ldots$ $p_{1,n}$ = $e_{1}$
+f $p_{2,1}$ $p_{2,2}$ $\ldots$ $p_{2,n}$ = $e_{2}$
+          $\vdots$
+f $p_{m,1}$ $p_{m,2}$ $\ldots$ $p_{m,n}$ = $e_{m}$
 \end{lstlisting}
 is going to be translated into:
 \begin{lstlisting}[mathescape=true]
-$f = \lambda v_{1}.\lambda v_{2} \dots \lambda v_{n}.((\lambda p_{1,1}'.\lambda.p_{1,2}'\dots\lambda p_{1,n}')\:v_{1}\:v_{2} \dots v_{n})\:[]$
-              $((\lambda p_{2,1}'.\lambda.p_{2,2}'\dots\lambda p_{2,n}')\:v_{1}\:v_{2} \dots v_{n})\:[]$
-                          $\vdots$
-              $((\lambda p_{m,1}'.\lambda.p_{m,2}'\dots\lambda p_{m,n}')\:v_{1}\:v_{2} \dots v_{n})\:[]$
-              $PatternMatchingError$
+f = $\lambda v_{1}$.$\lambda v_{2}$ $\ldots$ $\lambda v_{n}$.(($\lambda p_{1,1}'$.$\lambda$.$p_{1,2}'$ $\ldots$ $\lambda p_{1,n}'$) $v_{1}$ $v_{2}$ $\ldots$ $v_{n}$) []
+                 (($\lambda p_{2,1}'$.$\lambda$.$p_{2,2}'$ $\ldots$ $\lambda p_{2,n}'$) $v_{1}$ $v_{2}$ $\ldots$ $v_{n}$) []
+                                 $\vdots$
+                 (($\lambda p_{m,1}'$.$\lambda$.$p_{m,2}'$ $\ldots$ $\lambda p_{m,n}'$) $v_{1}$ $v_{2}$ $\ldots$ $v_{n}$) []
+                 Error
 \end{lstlisting}
 
 We've arrived to the point where the pattern matching algorithm starts its
@@ -1238,6 +1238,7 @@ binders doesn't contain refutable and complex patterns. Therefore it is
 important to run the conformality transform before pattern matching phase.
 
 \section{Transforming \texttt{case} expressions}
+
 \section{Dependency Analysis}
 Dependency analysis is a process of splitting up \texttt{let(rec)} bindings
 into minimial-sized groups and preferring \texttt{let} over \texttt{letrec}
@@ -1254,7 +1255,7 @@ expressions are not always as optimal as they could, is twofold:
 \end{itemize}
 Consider the following Kivi binding as an illustration of that fact:
 \begin{lstlisting}[label=lst:letrec_dependency_example,caption={Example of
-  \texttt{let(rec)} before dependency analysis.}]
+  \texttt{letrec} before dependency analysis.}]
 letrec
     p       = 3;
     q       = 7;
@@ -1267,7 +1268,8 @@ in
 \end{lstlisting}
 After analysing the dependencies and splitting the letrec into minimal
 subgroups the expression will become:
-\begin{lstlisting}
+\begin{lstlisting}[label=lst:letrec_after_anlysis,caption={\texttt{letrec}
+  after performing dependency anlysis.}]
 let
     p = 3
 let
@@ -1283,11 +1285,15 @@ in let
 in
     gcd 24 18
 \end{lstlisting}
-This section provides an efficient algorithm to perform dependency analysis.
-\subsection{Strongly Connected Components}
-In order to fully understand the role of \textit{strongly connected components}
-in analysing dependencies of a functional program I'll first introduce a few
-definitions that will help with further deliberations.
+This section provides an efficient algorithm to perform dependency analysis
+using \textit{strongly connected components}.
+
+\subsection{The Algorithm}
+The algorithm consists of a few steps that will be described below. The source
+code for this logic has been placed in \textit{DependencyAnalyser.hs} module
+with \texttt{analyseDeps} function as an entry point. However in order to fully
+understand further deliberations, it is necessary to introduce a couple of
+definitions, that will be given througout this section.
 \begin{definition}
 A directed graph is a pair G = (V, E) of:
 \begin{itemize}
@@ -1297,8 +1303,10 @@ A directed graph is a pair G = (V, E) of:
 \end{itemize}
 \end{definition}
 
-From now on we'll be looking at each \texttt{letrec} expression as an directed
-graph called \textit{dependency graph} defined as follows:
+\subsubsection{Constructing Dependency Graph}
+The first step of dependency analysis algorithm is to create a
+\textit{dependency graph} for each each \texttt{letrec} construct. It is
+defined as follows:
 \begin{definition}
 A dependency graph is a directed graph, where:
 \begin{itemize}
@@ -1311,10 +1319,79 @@ A dependency graph is a directed graph, where:
 \end{itemize}
 \end{definition}
 
-The dependency graph for our running example from
-Listing~\ref{lst:letrec_dependency_example} will look like this:
+To get a feeling how this applies in practice lets look at the dependency graph
+build for our example from Listing~\ref{lst:letrec_dependency_example}:
 
 TODO: graf dla tego przykladu
+
+\subsubsection{Strongly Connected Components}
+Next in order to group variables that depend on each other into one
+\texttt{letrec} binding, we have to determine which variables are mutually
+recursive. This is done by calculating the \textit{strongly connected
+components} (or \textit{SCC}) of a dependency graph. According to Wikipedia the
+definition of strongly connected components is following:
+
+\begin{definition}
+Directed graph is said to be strongly connected if there is a path from each
+vertex in the graph to every other vertex. In particular, this means paths in
+each direction: a path from a to b and also a path from b to a.
+The strongly connected components of a directed graph G are its maximal
+strongly connected subgraphs.
+\end{definition}
+
+In our running example the set of strongly connected components will look as
+in the next picture:
+
+TODO: obrazek z silnymi spojnymi skladowymi
+
+\subsubsection{Topological Sorting}
+After successfully determining the maximal sets of mutually dependant variable
+bindings, it's time to know which of these groups depend on each other. In this
+way bound variables will be in scope when evaluating the value of bindings that
+depend on them. The way to perform this step is to consider each strongly
+connected component as a single vertex, thus forming the graph that is acyclic,
+and then to put these vertices in a \textit{topologically sorted} order. After
+this step the situation in our example will be following:
+
+TODO: obrazek po sortowaniu topologicznym
+
+
+\subsubsection{Building a new \texttt{letrec}}
+The last step is to create the \texttt{letrec} binding for each strongly
+connected component in topological order. In our example the structure from
+Listing~\ref{lst:letrec_after_anlysis} will be created.
+
+
+\subsection{Implementation}
+Regarding implementation issues, the heart of the code responsible for
+aforementioned tasks is implemented in \texttt{analyseExpr} function in case
+for \texttt{let(rec)} expressions. First of all, each AST expression is
+augumented with its free variables. Based on that, function \texttt{getEdges}
+folds over \texttt{letrec} bindings and creates edges of the dependency graph:
+
+\begin{lstlisting}
+getEdges edges (name, (rhsFree, rhs)) =
+    edges ++ [(name, v) | v <- (Set.toList $ Set.intersection binderSet rhsFree)]
+\end{lstlisting}
+
+Next, \texttt{scc} function is invoked in order to find strongly connected
+components of dependency graph. It does so by first computing, for each vertex
+$x$, the set of vertices accessible (directly or indirectly) from that vertex
+using forward edges, as well as sets of vertices accessible using backward
+edges. By computing the intersection of these sets, we can effectively get
+component of vertex $x$:
+
+\begin{lstlisting}
+scc :: Show a => Ord a => (a -> [a]) -> (a -> [a]) -> [a] -> [Set a]
+scc ins outs vs = topSortedSccs
+    where
+        topSortedVs = snd $ dfs outs (Set.empty, []) vs
+        topSortedSccs = snd $ spanDfs ins (Set.empty, []) topSortedVs
+\end{lstlisting}
+
+The rest of the \texttt{analyseExpr} function is meant to split the input
+\texttt{letrec} expression according to the computed strongly connected
+component set.
 
 \section{Lambda Lifting}
 \section{Lazy Lambda Lifting}
