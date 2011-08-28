@@ -1585,12 +1585,12 @@ As a result \texttt{renameGen} and \texttt{rename} return supercombinators with
 each variable name being unique.
 
 \subsection{Collecting supercombinators}
-Finally, in the last step, we can
-perform the 'lift part' of lambda lifting algorithm. In this pass the
-supercombinators introduced earlier are collected and raised to the top level.
-Regarding source code, the only complicated bit is in the \texttt{collectExpr}
-function when collecting supercombinators from \texttt{let(rec)} expressions.
-There are three possibilities where we should collect supercombinators from:
+Finally, in the last step, we can perform the 'lift part' of lambda lifting
+algorithm. In this pass the supercombinators introduced earlier are collected
+and raised to the top level.  Regarding source code, the only complicated bit
+is in the \texttt{collectExpr} function when collecting supercombinators from
+\texttt{let(rec)} expressions.  There are three possibilities where we should
+collect supercombinators from:
 
 \begin{itemize}
   \item Firstly, supercombinators might be nested in \texttt{let(rec)}
@@ -1613,9 +1613,98 @@ There are three possibilities where we should collect supercombinators from:
 \section{Type Checker}
 
 
-\chapter{G-Machine}
+\chapter{The G-machine}
+The G-machine is an implementation of virtual machine based on the idea of
+\textit{graph reduction} that will be described in
+Section~\ref{sec:graph_reduction}. It works by compiling supercombinators into
+intermediate code called \textit{G-code} and later translating it further or
+executing in an interpreter.
+
+The advantage of choosing the intermediate representation instead of compiling
+to a particular machine code lies in a fact that it would require rewriting of
+the whole compiler if later decided to change the machine. Moreover, one of the
+main characteristics of intermediate representations is the fact that they
+should resemble the original source language, and generating the machine code
+from it, should remain simple as well. Thus, translating the original source
+code first into the G-code and later to the machine of our choice shall be much
+simpler than doing it in a straight-forward manner. The third argument for
+preferring having intermediate representation over a concrete one is that it
+will give us the ability to create virtual machine interpreters or compilers
+for any particular computer architecture we desire, by means of only switching
+the code generator. Code generators will then need to transform the
+intermediate language into machine code of that machine. This will greatly
+simplify the development of such tools, because the issues of compiling
+supercombinators to sequential code and compiling to machine code will be
+clearly separated.  Thanks to these facts I was able to easily create two
+implementations of the G-machine:
+
+\begin{itemize}
+  \item The first one, is a G-machine interpreter. It is particularly suited
+    for debugging purposes and it might be used as a Kivi shell in future. It
+    was created in Haskell, and described in Section~\ref{sec:interpreter}
+  \item Another one generates the intermediate code for Low Level Virtual
+    Machine, which later is compiled to machine code by LLVM compilers. Its
+    description is the content of the Section~\ref{sec:llvm_codegen}.
+\end{itemize}
+
+TODO: G-machine execution example?
+
+
+
+\section{Graph reduction}
+\label{sec:graph_reduction}
+As previously stated the output of a syntax analyser is an Abstract Syntax
+Tree. In above chapters we have applied a several transformations the the tree
+so as to either allow special constructs like lambda abstractions or to
+translate the source of the program to enriched lambda calculus. Eventually the
+output of these transformations is still AST. \textit{Graph reduction} is an
+implementation of efficient, non-strict evaluation strategy. Non-strictness in
+this context means that function arguments are evaluated on demand. This is
+also known as \textit{lazy evaluation}. Another feature of G-machine
+implementation is that values should only be evaluated once, in order not to
+repeat the same calculations over and over. The tree becomes a graph due to the
+transformations that take place during graph reduction.
+
+\subsection{Evaluation Strategy}
+There are many possible evaluation strategies. Many imperative languages
+chooses to follow the \textit{innermost evaluation}. In this strategy the
+arguments to a function are evaluated before the function application. In Kivi,
+similarly as in other lazy functional languages the outermost redex is
+evaluated first, thus Kivi adapts the \textit{innermost evaluation strategy}.
+Function arguments are evaluated only in case it's absolutely needed, so
+function arguments that are not used in the body of function will never be
+evaluated, thus saving computations.
+
+The process of reducing a graph consist of transforming a graph according to
+the specified rules and eventually arriving to the state where it cannot be
+reduced any more: the graph is in the so called \textit{weak head normal form}
+(or WHNF for short). We assume that an expression is in the WHNF in several
+cases. First of all it might be a number, character, or any other simple data
+type. Secondly it might be a constructor application. Another situation where
+there is nothing more to reduce if the expression is in ($f$ $e_1$ $e_2$
+$\ldots$ $e_n$) where $f$ is lambda abstraction or built-in function and $n$ is
+less than the expected number of arguments for $f$.
+
+The process of evaluation can be described in four points:
+
+\begin{itemize}
+  \item Finding the next redex
+  \item Check if the redex is in WHNF, if so stop, else continue
+  \item Recucing the redex
+  \item Updating the root of of the redex
+\end{itemize}
+
+\subsection{Finding next redex}
+
+
+
+\section{Compiling supercombinators}
 \section{Interpreter}
-\section{LLVM Compiler}
+\label{sec:interpreter}
+\section{LLVM Code Generator}
+\label{sec:llvm_codegen}
+
+\chapter{Further work}
 
 \bibliographystyle{alpha}
 \bibliography{kivi}
