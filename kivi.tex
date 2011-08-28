@@ -1588,6 +1588,26 @@ each variable name being unique.
 Finally, in the last step, we can
 perform the 'lift part' of lambda lifting algorithm. In this pass the
 supercombinators introduced earlier are collected and raised to the top level.
+Regarding source code, the only complicated bit is in the \texttt{collectExpr}
+function when collecting supercombinators from \texttt{let(rec)} expressions.
+There are three possibilities where we should collect supercombinators from:
+
+\begin{itemize}
+  \item Firstly, supercombinators might be nested in \texttt{let(rec)}
+    expression. They are gathered by calling \texttt{collectExpr} on that
+    expression and are stored in \texttt{exprScs} variable.
+  \item Supercombinators might also be present directly as \texttt{let(rec)}
+    bindings as $sc$ \texttt{=} $\lambda v_1$ $\ldots$ $v_n$ . $expr$.
+    Therefore what Kivi does, is splitting the list of bindings into ones that
+    are simple variable bindings and supercombinators.
+  \item The third and the last possibility is when supercombinators are nested
+    in the right-hand side of binding. Then we should extract them by means of
+    calling the \texttt{collectExpr} on the right-hand side of binding
+    definition. This is implemented by folding over bindings with
+    \texttt{collectDef}.
+\end{itemize}
+
+
 
 \section{Lazy Lambda Lifting}
 \section{Type Checker}
