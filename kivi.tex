@@ -1394,6 +1394,104 @@ The rest of the \texttt{analyseExpr} function is meant to split the input
 component set.
 
 \section{Lambda Lifting}
+This section provides a description of how lambda abstractions are implemented
+in Kivi. Lambda abstractions are more commonly known as \textit{local function}
+or \textit{anonymous function} definitions concepts from imperative languages.
+As previosly I'm going to describe a program transformation, which when
+applied, converts the program into a form where lambda abstracions become
+global supercombinators. This transformation is known as \textit{lambda
+lifting} or \textit{closure conversion}. The reader is encouraged to read the
+Chapter 6 in \cite{joneslester00}, as well as Chapter 13 in \cite{jones87} to
+get additional information on this subject.
+
+For the purpose of our \textit{lambda lifter} described here, I'm going to
+introduce the annotated version of Abstract Syntax Tree, that is capable of
+carrying additional information needed for transformations described in this
+chapter. The type that implements this was called \texttt{AnnExpr} and has
+been placed in \textit{LambdaLifter.hs}. Its full definition is following:
+
+\begin{lstlisting}
+type AnnExpr a b = (b, AnnExpr' a b)
+
+data AnnExpr' a b = AVar Name
+                  | ANum Int
+                  | AChar Int
+                  | AConstr Int Int
+                  | AAp (AnnExpr a b) (AnnExpr a b)
+                  | ALet IsRec [AnnDefn a b] (AnnExpr a b)
+                  | ACase (AnnExpr a b) [AnnAlt a b]
+                  | ACaseSimple (AnnExpr a b) [AnnAlt a b]
+                  | ACaseConstr (AnnExpr a b) [AnnAlt a b]
+                  | ALam [a] (AnnExpr a b)
+                  | ASelect Int Int a
+                  | AError String
+    deriving Show
+
+type AnnDefn a b = (a, AnnExpr a b)
+type AnnAlt a b = (Int, AnnExpr a b)
+data AnnScDefn a b = AnnScDefn Name [a] (AnnExpr a b)
+type AnnProgram a b = [AnnScDefn a b]
+\end{lstlisting}
+
+As in the case for general \texttt{Expr} data type, each constructor is
+responsible for creating a corresponding expression type. The \texttt{b} type
+variable stands for additional information that the following passes will
+produce. For instance, the \texttt{freeVars} pass described below, gathers the
+free variables from the expression, so the \texttt{b} type will represent the
+set of free variables in this expression. The full type in this case will have
+the AnnExpr \texttt{AnnExpr Name (Set Name)} signature.
+
+Lambda lifting is a way of eliminate free variables from local function
+definitions. The elimination of free variables allows the compiler to hoist
+lambda abstractions out of their surrounding contexts into a fixed set of
+top-level supercombinators with extra parameter for each free variable. As an
+example of this we'll analyse the following Kivi function that multiplies two
+integers without using the multiplication operator (in a rather not the most
+optimal fashion)
+
+\begin{lstlisting}
+mul 0 y = 0;
+mul x 0 = 0;
+mul 1 y = y;
+mul x y =
+    let sum a = y + a
+    in sum (mul (x-1) y);
+\end{lstlisting}
+
+The \texttt{sum} lambda abstraction can be removed by introducting a new
+\texttt{sum'} supercombinator, that takes an additional argument $t$ as shown at
+the example below:
+
+\begin{lstlisting}[mathescape=true]
+$sum'$ $t$ a = $t$ + a
+mul 0 y = 0;
+mul x 0 = 0;
+mul 1 y = y;
+mul x y =
+    $sum'$ y (mul (x-1) y);
+\end{lstlisting}
+
+Lambda lifter will define such supercombinator for each lambda abstraction and
+each of these supercombinators will take additional arguments that has been
+free in the body of lambda abstraction before transformation.
+
+The lambda lifting algorithm consists of four parts executed one after another:
+
+\begin{lstlisting}
+lambdaLift :: CoreProgram -> CoreProgram
+lambdaLift (adts, scs) = (adts, collectScs . rename . abstract . freeVars $ scs)
+\end{lstlisting}
+
+I'm going to describe and provide details of how each of them has been
+implemented in Kivi. The source file to look for implementation details, is
+\textit{LambdaLifter.hs}.
+
+\subsection{Annotating exprssions with free variables}
+\subsection{Abstracting free variables}
+\subsection{Renaming supercombinators}
+\subsection{Collecting supercombinators}
+
+
 \section{Lazy Lambda Lifting}
 \section{Type Checker}
 
