@@ -1410,7 +1410,7 @@ carrying additional information needed for transformations described in this
 chapter. The type that implements this was called \texttt{AnnExpr} and has
 been placed in \textit{LambdaLifter.hs}. Its full definition is following:
 
-\begin{lstlisting}
+\begin{lstlisting}[label=lst:annotated_expression]
 type AnnExpr a b = (b, AnnExpr' a b)
 
 data AnnExpr' a b = AVar Name
@@ -1486,8 +1486,71 @@ I'm going to describe and provide details of how each of them has been
 implemented in Kivi. The source file to look for implementation details, is
 \textit{LambdaLifter.hs}.
 
-\subsection{Annotating exprssions with free variables}
+\subsection{Annotating expressions with free variables}
+The first phase of an algorithm is to annotate each Abstract Syntax Tree
+expression with free variable occurencs contained in it. As we can see in the
+type signature for function \texttt{freeVars} it transforms a list of
+supercombinator definitions into the similar list\footnote{\texttt{AnnProgram}
+type, according to Listing~\ref{lst:annotated_expression}, is just the list of
+annotated supercombinator definitions}:
+
+\begin{lstlisting}
+freeVars :: [CoreScDefn] -> AnnProgram Name (Set Name)
+\end{lstlisting}
+
+More complicated code appears in the definition of function
+\texttt{calcFreeVars} that has been called from \texttt{freeVars}. Its
+arguments are:
+\begin{itemize}
+  \item \texttt{localVars} keeps variable names that has been defined in outer
+    scopes. If, during traversing of AST such variable is used, it means that
+    it s free variable of current expression.
+  \item Expression to visit
+\end{itemize}
+
+The cases for simple expressions like \texttt{EVar} or \texttt{ENum} are easy,
+the most complicated one occurs when calculating free vars for
+\texttt{let(rec)} bindings. The code in this case works by calculating the free
+variable set for each of the right-hand sides of bound variables. Then if it is
+the recursive let, the free variable set consist of sum of these sets without
+variables bound in current \texttt{letrec} binding. Otherwise it's simply the
+sum of all free variables in right-hand sides.
+
 \subsection{Abstracting free variables}
+After each expression has the set of its free variables assigned, the algorithm
+proceeds by abstracting out the free variables from each lambda abstraction and
+introducting the \texttt{let} binding of the form:
+
+\begin{lstlisting}[mathescape=true]
+(let sc = \$v_1$ $v_2$ $\ldots$ $v_n$ $x_1$ $x_2$ $\ldots$ $x_n$ . $expr$ in sc) $v_1$ $v_2$ $\ldots$ $v_n$
+\end{lstlisting}
+
+for $v_1$, $v_2$, $\ldots$, $v_n$ being free variables of lambda abstraction.
+The code responsible for this is in the \texttt{abstractExpr} function in the
+branch where \texttt{ALam} expressions are considered:
+
+\begin{lstlisting}
+abstractExpr (freeVars, ALam args expr) =
+    foldl EAp sc $ map EVar freeVarsList
+    where
+        freeVarsList = Set.toList freeVars
+        sc = ELet False [("sc", scBody)] (EVar "sc")
+        scBody = ELam (freeVarsList ++ args) (abstractExpr expr)
+\end{lstlisting}
+
+The example of how this code would perform on a real case might be as the one
+below. The lambda abstraction:
+
+\begin{lstlisting}
+(\x . y * y + x * z + tmp)
+\end{lstlisting}
+
+will be transformed into:
+
+\begin{lstlisting}
+(let sc = (\y z tmp x . y * y + x * z + tmp) in sc) y z x
+\end{lstlisting}
+
 \subsection{Renaming supercombinators}
 \subsection{Collecting supercombinators}
 
