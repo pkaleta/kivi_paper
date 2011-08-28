@@ -1,3 +1,4 @@
+%\documentclass[12pt,a4paper]{report}
 \documentclass[a4paper]{report}
 \usepackage{fullpage}
 \usepackage{alltt}
@@ -5,6 +6,7 @@
 \usepackage{caption}
 \usepackage{url}
 \usepackage{amsthm}
+\usepackage{setspace}
 \newtheorem{definition}{Definition}[chapter]
 %\usepackage{courier}
 
@@ -72,6 +74,7 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 
 \tableofcontents
 
+%\onehalfspace
 \chapter{Introduction}
 
 This paper describes the design and implementation of a lazy functional
@@ -1552,8 +1555,39 @@ will be transformed into:
 \end{lstlisting}
 
 \subsection{Renaming supercombinators}
-\subsection{Collecting supercombinators}
+The next step performs the renaming of variables, effectively giving unique
+name to each of the \texttt{sc} variables introduced by \texttt{let} bindings
+in previous step. Given that introduced supercombinators have unique names it
+would be possible to hoist them to the level of global supercombinators during
+next phases of algorithm. This is implemented as \texttt{rename} function. It
+calls a generic renaming function \texttt{renameGen}. \texttt{renameGen} takes
+as an input a function that generate new unique suffixes and concatenate them
+with old variable names. It also requires that a list of supercombinator
+definitions is given. It works by recursively visiting each AST expression and
+performing a rename where applicable. Example function that is supposed to
+rename variables in \texttt{EVar} expression:
 
+\begin{lstlisting}
+renameExpr newNamesFun mapping ns (EVar v) =
+    (ns, EVar v')
+    where
+        v' = case Map.lookup v mapping of
+            (Just x) -> x
+            Nothing -> v
+\end{lstlisting}
+
+Here, \texttt{mapping} is an instance of a \texttt{NameSupply} type. It is used
+to carry around an information about already used names in form of map between
+old variable name to new variable name. If currently considered variable is
+already present in a map, it means that we should use the name saved there.
+
+As a result \texttt{renameGen} and \texttt{rename} return supercombinators with
+each variable name being unique.
+
+\subsection{Collecting supercombinators}
+Finally, in the last step, we can
+perform the 'lift part' of lambda lifting algorithm. In this pass the
+supercombinators introduced earlier are collected and raised to the top level.
 
 \section{Lazy Lambda Lifting}
 \section{Type Checker}
