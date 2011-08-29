@@ -86,9 +86,9 @@ The compilation process is implemented as a set of passes that eventually
 transforms the source code into simple intermediate language \textit{lambda
 calculus} enriched with let(rec) expressions. It would be possible to implement
 compiler using less passes than I did, or maybe even one, but such clear
-separation made things simpler to both develop and debug as well. Besides now
-the compiler is very modular and inserting additional passes could be done with
-no harm, which wouldn't be that easy if I'd used one pass only instead.
+separation made things simpler to both develop and debug as well. Besides such
+separation, made the compiler very modular and inserting additional passes
+could be done with no minimal complexity.
 
 
 In following chapters I am going to describe the process of translating
@@ -1062,9 +1062,16 @@ Later, general \texttt{let} expressions, are converted into simple
 \texttt{let}s via irrefutable \texttt{let}s, obtained by previous
 transformation. On the other hand general \texttt{letrec}s are first
 transformed into irrefutable \texttt{letrec}s and finally into simple
-\texttt{letrec}s. This process is shown in Figure~\ref{fig:letrec_transform}.
+\texttt{letrec}s. This process is shown in Figure~\ref{fig:letrec_transform}:
 
-TODO: diagram pokazujacy w jakiej kolejnosci sa aplikowane transformacje.
+\begin{figure}[h!]
+  \centering
+
+  TODO: diagram pokazujacy w jakiej kolejnosci sa aplikowane transformacje.
+
+  \caption{Transformation of \texttt{let(rec)} expressions.}
+  \label{fig:letrec_transform}
+\end{figure}
 
 \subsection{Refutable and irrefutable patterns.}
 \label{sec:irrefutable_patterns}
@@ -1647,10 +1654,6 @@ implementations of the G-machine:
     description is the content of the Section~\ref{sec:llvm_codegen}.
 \end{itemize}
 
-TODO: G-machine execution example?
-
-
-
 \section{Graph reduction}
 \label{sec:graph_reduction}
 As previously stated the output of a syntax analyser is an Abstract Syntax
@@ -1658,12 +1661,41 @@ Tree. In above chapters we have applied a several transformations the the tree
 so as to either allow special constructs like lambda abstractions or to
 translate the source of the program to enriched lambda calculus. Eventually the
 output of these transformations is still AST. \textit{Graph reduction} is an
-implementation of efficient, non-strict evaluation strategy. Non-strictness in
-this context means that function arguments are evaluated on demand. This is
-also known as \textit{lazy evaluation}. Another feature of G-machine
-implementation is that values should only be evaluated once, in order not to
-repeat the same calculations over and over. The tree becomes a graph due to the
-transformations that take place during graph reduction.
+implementation of efficient, non-strict supercombinator evaluation strategy.
+Non-strictness in this context means that function arguments are evaluated on
+demand. This is also known as \textit{lazy evaluation}. Another feature of
+G-machine implementation is that values should only be evaluated once, in order
+not to repeat the same calculations over and over.
+
+\subsection{The Graph}
+The abstract syntax tree is transformed to a graph due to conversions that take
+place during graph reduction. Such graph is being stored in memory,
+specifically it's kept on the heap. The nodes of the graph are dynamically
+allocated on the heap. They contain a \textit{tag} that uniquely identifies the
+type of a node, as well as additinoal fields like values, in case of number
+nodes, or links (addresses) to other nodes in case of application nodes for
+instance. For example the abstract way of visualising application node might be
+like in the figure below:
+
+\begin{figure}[h!]
+  \centering
+
+  TODO: Example of application node.
+
+  \caption{Application node on the heap.}
+  \label{fig:application_node}
+\end{figure}
+
+On the other hand number nodes might be perceived as following:
+
+\begin{figure}[h!]
+  \centering
+
+  TODO: Example of number node.
+
+  \caption{Number node no the heap.}
+  \label{fig:num_node}
+\end{figure}
 
 \subsection{Evaluation Strategy}
 There are many possible evaluation strategies. Many imperative languages
@@ -1675,27 +1707,103 @@ Function arguments are evaluated only in case it's absolutely needed, so
 function arguments that are not used in the body of function will never be
 evaluated, thus saving computations.
 
-The process of reducing a graph consist of transforming a graph according to
-the specified rules and eventually arriving to the state where it cannot be
-reduced any more: the graph is in the so called \textit{weak head normal form}
+In Kivi reduction starts by evaluating the body of \texttt{main}
+supercombinator. The process of reduction consist of transforming a graph
+according to the specified rules and eventually arriving to the state where it
+cannot be reduced any more. Such state is called \textit{weak head normal form}
 (or WHNF for short). We assume that an expression is in the WHNF in several
-cases. First of all it might be a number, character, or any other simple data
-type. Secondly it might be a constructor application. Another situation where
-there is nothing more to reduce if the expression is in ($f$ $e_1$ $e_2$
-$\ldots$ $e_n$) where $f$ is lambda abstraction or built-in function and $n$ is
-less than the expected number of arguments for $f$.
+cases. First of all, when it is a number, character, or any other simple data
+type it's considered to be in WHNF. Another situation where there is nothing
+more to reduce is if the expression is in ($f$ $e_1$ $e_2$ $\ldots$ $e_n$)
+form, where $f$ is lambda abstraction, built-in function or constructor and $n$
+is less or equal the expected number of arguments for $f$.
 
 The process of evaluation can be described in four points:
 
 \begin{itemize}
-  \item Finding the next redex
-  \item Check if the redex is in WHNF, if so stop, else continue
-  \item Recucing the redex
-  \item Updating the root of of the redex
+  \item Finding the next reducible redex
+  \item If there's no redex which can be evaluated, then stop
+  \item Otherwise reduce the redex
+  \item Update the root of the redex, to save the result of computations
 \end{itemize}
 
 \subsection{Finding next redex}
+The first step is to find the node of a graph where to perform the next
+reduction. As already mentioned, among all such nodes we'll be looking for the
+outermost one. The most straight-forward way to find it, is to follow the left
+branches of application nodes (as shown in Figure~\ref{fig:application_node})
+saving the traversed node addresses on the runtime stack. There are two cases
+when this process stops, either when the supercombinator or built-in function
+node is encountered.
 
+\subsection{Reduction}
+Reduction depends on the type of node the algorithm encountered. As previously
+said there are two cases. Supercombinator and built-ins reductions:
+
+\subsubsection{Reducing supercombinators}
+When supercombinator node is to be evaluated, first thing what G-machine does,
+is to check whether there are enough arguments on the stack. If it is not the
+case, algorithm returns, as such application appears to be a \textit{partial
+application} forming a closure. On the other hand, if the number of arguments
+on the stack is greater or equal to the expected number the process continues.
+The arguments to a supercombinator consist of a set of right children of
+application nodes that we have visited during traversal\footnote{At this step,
+the \textit{rearrangement} of arguments takes place. This activity will be
+described in next chapters, but it's just an optimization so I'm not going to
+introduce it right now, not to make unnecessary complications.}. The addresses
+that form the stack, are called \textit{spine} of the expression, and the
+process of following the left branches of application nodes is commonly known
+as \textit{unwinding} the spine. The reduction of a supercombinator can be
+looked at as instantiating a supercombinator body with arguments substituted
+for formal parameters (as defined in Section 2.1.4 of \cite{joneslester00}).
+
+\subsubsection{Reducing built-ins}
+It might be the case however that the outermost redex found is not a
+supercombinator node, but rather a built-in operator or function. In such case,
+before applying the builtin, the required arguments should be evaluated to
+WHNF. Therefore when evaluator finds itself in a state when built-in function
+is the currently encountered node, it has to save the current stack on the
+\textit{dump} and recursively invoke itself on all arguments that are not in
+WHNF. Of course it might happen that during evaluation of arguments, the
+algorithm once again runs into a situation when another builtin is to be
+evaluated. In such case, it saves the current stack again and performs another
+recursive invokation of itself. Dump therefore, is formed by putting stacks on
+each other, so it might be perceived as stack of stacks.
+
+This situation described above occurs when evaluating the expression \texttt{(1
++ (sqr 2)) * 3}. The graph built for this expression will be like in the
+Figure~\ref{fig:expression_graph}
+
+\begin{figure}[h!]
+  \centering
+
+  TODO: graf dla wyrazenia (1 + (sqr 2)) * 3
+
+  \caption{Graph created for expression \texttt{(1 + (sqr 2)) * 3}.}
+  \label{fig:expression_graph}
+\end{figure}
+
+Because \texttt{*} operator is a builtin, it requires that all its arguments
+are in WHNF before being able to continue. The algorithm puts the current stack
+onto a dump and starts to evaluate the first argument. Shortly it will run into
+a state that \texttt{+} is to be applied, but once again \texttt{sqr 2} is not
+in a WHNF, so the process continues.
+
+\section{Updating}
+
+\subsubsection{Example evaluation}
+Example of evaluating expression (TODO: example expression) is presented
+in Figure~\ref{fig:example_reduction}.
+
+\begin{figure}[h!]
+  \centering
+
+  TODO: Obrazek ilustrujacy stos i zbudowane w ten sposob drzewo ewaluacji
+  wyrazenia
+
+  \caption{Example reduction process.}
+  \label{fig:example_reduction}
+\end{figure}
 
 
 \section{Compiling supercombinators}
@@ -1703,6 +1811,7 @@ The process of evaluation can be described in four points:
 \label{sec:interpreter}
 \section{LLVM Code Generator}
 \label{sec:llvm_codegen}
+\label{Garbage Collection}
 
 \chapter{Further work}
 
