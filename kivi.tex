@@ -1,5 +1,5 @@
-%\documentclass[12pt,a4paper]{report}
-\documentclass[a4paper]{report}
+\documentclass[12pt,a4paper]{report}
+%\documentclass[a4paper]{report}
 \usepackage{fullpage}
 \usepackage{alltt}
 \usepackage{listings}
@@ -33,7 +33,7 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 }
 
 
-\title{Lazy functional programming language targeting Low Level Virtual Machine}
+\title{Kivi: Lazy functional programming language targeting Low Level Virtual Machine}
 \author{\textit{Author:}\\Piotr Micha\l{} Kaleta\\\\\emph{Supervisor:}\\dr W\l{}odzimierz Moczurad}
 \date{\today}
 
@@ -74,12 +74,12 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 
 \tableofcontents
 
-%\onehalfspace
+\onehalfspace
 \chapter{Introduction}
 
 This paper describes the design and implementation of a lazy functional
 language compiler. The implementation is based on the
-\textit{G-machine}\cite{jones87} and uses \textit{lazy graph reduction} to
+\textit{G-machine}\cite{Jon87} and uses \textit{lazy graph reduction} to
 perform evaluation.
 
 The compilation process is implemented as a set of passes that eventually
@@ -112,7 +112,7 @@ standard form of keeping the representation of source code in memory. The
 process of reading the input source file and producing AST from it is called
 \textit{parsing}.
 I've chosen to implement a simple parser, in a similar manner as in
-\cite{joneslester00} as it seemed as the simplest approach to me then. Now, as
+\cite{JonLes00} as it seemed as the simplest approach to me then. Now, as
 the parser has grown, I'd strongly consider rewriting it to use parser combinator
 library such as \cite{website:parsec} instead.  The parsing consists of two
 passes. As previously mentioned such separation makes implementation and
@@ -727,7 +727,7 @@ The remaining part of this section contains a description of an algorithm that
 is capable of transforming pattern matching into the form that uses case
 expressions instead of pattern-matching lambda abstractions, thus allowing to
 compile patterns more efficiently. In order to see a more detailed analysis
-refer to Chapters 4 and 5 of \cite{jones87}.
+refer to Chapters 4 and 5 of \cite{Jon87}.
 
 \subsection{Pattern-matching Lambda Abstractions}
 In lambda calculus, regular lambda abstraction is an expression of the
@@ -1411,7 +1411,7 @@ As previosly I'm going to describe a program transformation, which when
 applied, converts the program into a form where lambda abstracions become
 global supercombinators. This transformation is known as \textit{lambda
 lifting} or \textit{closure conversion}. The reader is encouraged to read the
-Chapter 6 in \cite{joneslester00}, as well as Chapter 13 in \cite{jones87} to
+Chapter 6 in \cite{JonLes00}, as well as Chapter 13 in \cite{Jon87} to
 get additional information on this subject.
 
 For the purpose of our \textit{lambda lifter} described here, I'm going to
@@ -1755,7 +1755,7 @@ that form the stack, are called \textit{spine} of the expression, and the
 process of following the left branches of application nodes is commonly known
 as \textit{unwinding} the spine. The reduction of a supercombinator can be
 looked at, as instantiating a supercombinator body with arguments substituted
-for formal parameters (as defined in Section 2.1.4 of \cite{joneslester00}).
+for formal parameters (as defined in Section 2.1.4 of \cite{JonLes00}).
 
 \subsubsection{Reducing built-ins}
 It might be the case however that the outermost redex found is not a
@@ -1771,7 +1771,7 @@ recursive invokation of itself. Dump therefore, is formed by putting stacks on
 each other, so it might be perceived as stack of stacks.
 
 This situation described above occurs when evaluating the expression \texttt{(1
-+ (sqr 2)) * 3}. The graph built for this expression will be like in the
++ (sqr 2)) * 3}. The graph built for this expression will look like one in
 Figure~\ref{fig:expression_graph}
 
 \begin{figure}[h!]
@@ -1799,7 +1799,9 @@ introduce a new node type called \textit{indirection node}. Otherwise the
 reduced node (result of computations) will have to be copied to the root of
 the redex. In case of that node not being fully evaluated it brings a risk of
 performing computations multiple times. Indirection nodes work like a pointer
-to other node, so when used we can be sure the nodes are reduced only once.
+to other node, effectively making the machine to use the values computed last
+time redex was reduced. This will prevent it from performing the same
+calculations more than once.
 
 \subsection{Evaluation Example}
 Example of evaluating expression (TODO: example expression) is presented
@@ -1864,7 +1866,7 @@ Here, \texttt{GmCode} type represents the G-code and is a simple list containing
 \texttt{Instruction} instances. To give a hopefully clarifying example,
 consider following supercombinator definition:
 
-\begin{lstlisting}
+\begin{lstlisting}[label=lst:sc_to_compile,caption=Supercombinator to compile.]
 calc x y = 3+x*y
 \end{lstlisting}
 
@@ -1912,13 +1914,136 @@ below:
 \end{figure}
 
 \subsection{Compiler implementation}
+Kivi's compiler is implemented as a set of \textit{compilation schemes} in
+\textit{GmCompiler.hs} file. Each such compiliation scheme is applicable in
+certain conditions. For example the scheme implemented by \texttt{compileA}
+function, is chosen when compiling branches of case expression. The main data
+type representing compiler is \texttt{GmCompiler} defined as below:
 
-\section{State transition systems}
+\begin{lstlisting}
+type GmCompiler = CoreExpr -> GmEnvironment -> GmCode
+type GmEnvironment = Assoc Name Int
+\end{lstlisting}
+
+\texttt{GmEnvironment} is a data type for keeping associations between variable
+names and their offset from the stack top. So our compiler is expected to be
+perceived as a function that given the abstract syntax tree, as well as
+environment produces G-machine instructions. Compilation process starts from
+\texttt{compile} function. It turns the abstract syntax tree of a program into
+an initial state prepared for either interpretation or further compilation (into
+LLVM intermediate representation, in case of Kivi):
+
+\begin{lstlisting}
+compile :: CoreProgram -> GmState
+compile (dts, scs) = ([], initialCode, [], [], [], heap, globals, initialStats)
+    where
+        (heap, globals) = buildInitialHeap scs
+\end{lstlisting}
+
+Here, the \texttt{buildInitialHeap} is used to fold over each supercombinator,
+create a node of \texttt{NGlobal} type for it on the heap. Other possible node
+types that might occur on the heap are:
+
+\begin{lstlisting}
+data Node = NNum Int
+          | NChar Int
+          | NAp Addr Addr
+          | NGlobal Int GmCode
+          | NInd Addr
+          | NConstr Int [Addr]
+          | NMarked Node
+\end{lstlisting}
+
+whereas heap itself is a mapping from \texttt{Addr} to \texttt{Node}. The
+\texttt{NMarked} node type is used in garbage collector, see
+Section~\ref{sec:garbage_collection}, for details.
+
+In order to compile an expression compilation schemes are recursively applied
+in accordance to the type of expression. Look at the case when
+\texttt{compileC} compilation scheme is generating code for
+\texttt{EAp}\footnote{This expression type represents function applications.}
+expression:
+
+\begin{lstlisting}
+compileC (EAp e1 e2) env =
+    compileC e2 env ++
+    compileC e1 (argOffset 1 env) ++
+    [Mkap]
+\end{lstlisting}
+
+In order to follow further deliberations, recall that application nodes consist
+of two subexpressions. First one is a function to be applied, whereas another
+is an argument. What \texttt{compileC} does, is to first generate code for an
+argument. At this point when the generated code is executed the argument will
+be pushed on the top of the runtime stack. Therefore all variables that were
+there, will be moved up by one stack cell. This is exactly what
+\texttt{argOffset} function does. After generating code for function too, an
+\texttt{Mkap} instruction is added to apply argument to it. Again a simple
+example might be worth more that thousand words. Below I present the
+compilation steps required for expression from Listing~\ref{lst:sc_to_compile}.
+
+
+TODO: Example of compiling supercombinator from listing~\ref{lst:sc_to_compile}.
+
+
 \section{Interpreter}
 \label{sec:interpreter}
+\subsection{State transition systems}
 \section{LLVM Code Generator}
 \label{sec:llvm_codegen}
-\label{Garbage Collection}
+
+\section{Garbage Collection}
+\label{sec:garbage_collection}
+\textit{Garbage collection}, as described in \cite{wiki:garbage_collection}
+is a form of automatic memory management. It collects and manages the memory
+that was allocated on the heap by running program. By management I mean
+determining which objects in memory will not be needed anymore, so they can be
+safely returned to the free memory pool. Deciding upon which memory is not
+going to be used by the program anymore, is one of the biggest issues in
+designing garbage collector. Another problem is to decide when to run garbage
+collector in order to reclaim memory.
+
+\subsection{Mark and Sweep GC}
+Current approach that has been taken in Kivi's garbage collection is to
+implement a simple \textit{mark and sweep} algorithm. It's sources are
+available in the \textit{Gc.hs} file. In this kind of garbage collection
+strategy, each node on the heap, has an associated value that says, whether or
+not, the current node is used. This is the role of \texttt{NMarked} node
+constructor mentioned in one of previous chapters. If the node is wrapped into
+this type it means it might still be needed during program execution.
+
+Garbage collection is being triggered when the number of allocated heap nodes
+reaches a certain, configurable threshold value. In such case, the entry point
+function, \texttt{gc} is called:
+
+\begin{lstlisting}
+gc :: GmState -> GmState
+gc state = putHeap heap' state
+    where
+        heap' = scanHeap $ foldl markFrom heap $ findRoots state
+        heap = getHeap state
+\end{lstlisting}
+
+It performs a transformation between G-machine states, where the returned one
+has its heap size reduced by freeing unused nodes. Algorithm is divided into
+several parts:
+
+\begin{itemize}
+  \item The first step of mark and sweep algorithm, is to find the, so called,
+    \textit{root nodes}. These are the nodes that are contained either in the
+    stack, dump or globals parts of state. Function \texttt{findRootNodes} is
+    designed for exactly this purpose. It scans stack, globals as well as dump
+    and collects encountered nodes.
+  \item In \textit{mark} phase, the entire heap, starting from roots is
+    analysed, by means of recursive invocations of \texttt{markFrom} function,
+    which wraps visited nodes with \texttt{NMarked} constructor.
+  \item Finally, all memory is scanned from start to finish, examining all free
+    or used blocks. Those without \texttt{NMarked} flag are not reachable
+    by any program or data, and their memory is reclaimed. For nodes which are
+    marked in-use, the flag is cleared again, preparing for the next
+    cycle.
+\end{itemize}
+
 
 \chapter{Further work}
 
