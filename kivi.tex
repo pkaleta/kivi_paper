@@ -1737,11 +1737,11 @@ when this process stops, either when the supercombinator or built-in function
 node is encountered.
 
 \subsection{Reduction}
-Reduction depends on the type of node the algorithm encountered. As previously
-said there are two cases. Supercombinator and built-ins reductions:
+Reduction depends on the type of node the algorithm encountered. There are a
+few cases that might occur:
 
 \subsubsection{Reducing supercombinators}
-When supercombinator node is to be evaluated, first thing what G-machine does,
+When supercombinator node is to be reducted, first thing what G-machine does,
 is to check whether there are enough arguments on the stack. If it is not the
 case, algorithm returns, as such application appears to be a \textit{partial
 application} forming a closure. On the other hand, if the number of arguments
@@ -1754,7 +1754,7 @@ introduce it right now, not to make unnecessary complications.}. The addresses
 that form the stack, are called \textit{spine} of the expression, and the
 process of following the left branches of application nodes is commonly known
 as \textit{unwinding} the spine. The reduction of a supercombinator can be
-looked at as instantiating a supercombinator body with arguments substituted
+looked at, as instantiating a supercombinator body with arguments substituted
 for formal parameters (as defined in Section 2.1.4 of \cite{joneslester00}).
 
 \subsubsection{Reducing built-ins}
@@ -1789,9 +1789,19 @@ onto a dump and starts to evaluate the first argument. Shortly it will run into
 a state that \texttt{+} is to be applied, but once again \texttt{sqr 2} is not
 in a WHNF, so the process continues.
 
-\section{Updating}
+\subsection{Updating}
+\label{sec:updating}
+When reduction is complete, there is a need to save results of our
+computations. This is called \textit{updating} the root of redex. Important
+thing to notice is that if the redex is shared between two nodes of our graph,
+the evaluation should be done only once. In order to achieve this we have to
+introduce a new node type called \textit{indirection node}. Otherwise the
+reduced node (result of computations) will have to be copied to the root of
+the redex. In case of that node not being fully evaluated it brings a risk of
+performing computations multiple times. Indirection nodes work like a pointer
+to other node, so when used we can be sure the nodes are reduced only once.
 
-\subsubsection{Example evaluation}
+\subsection{Evaluation Example}
 Example of evaluating expression (TODO: example expression) is presented
 in Figure~\ref{fig:example_reduction}.
 
@@ -1805,8 +1815,105 @@ in Figure~\ref{fig:example_reduction}.
   \label{fig:example_reduction}
 \end{figure}
 
-
 \section{Compiling supercombinators}
+Compilation is a process of turning supercombinator body into a sequence of
+G-machine instructions. These instructions when executed will construct an
+instance of a supercombinator with formal parameters substituted with actual
+function arguments. When running a concrete program, consisting of
+supercombinator definitions, at first it will be translated into G-code, and this
+process may be seen as \textit{compile time}. Later G-code is going to be
+executed on a virtual machine, the G-machine. The latter may be regarded as
+\textit{run time}.
+
+
+\subsection{Instruction set}
+In Kivi the set of G-code instructions available is presented as an excerpt
+from \textit{Common.hs} module below:
+
+\begin{lstlisting}
+type GmCode = [Instruction]
+
+data Instruction = Unwind
+                 | Pushglobal Name
+                 | Pushconstr Int Int
+                 | Pushint Int
+                 | Pushchar Int
+                 | Push Int
+                 | Mkap
+                 | Update Int
+                 | Pop Int
+                 | Slide Int
+                 | Alloc Int
+                 | Eval
+                 | Add | Sub | Mul | Div | Neg | Mod
+                 | Eq | Ne | Lt | Le | Gt | Ge
+                 | Pack Int Int
+                 | CasejumpSimple (Assoc Int GmCode)
+                 | CasejumpConstr (Assoc Int GmCode)
+                 | Select Int Int
+                 | Error String
+                 | Split Int
+                 | Print
+                 | Pushbasic Int
+                 | MkBool
+                 | MkInt
+                 | Get
+\end{lstlisting}
+
+Here, \texttt{GmCode} type represents the G-code and is a simple list containing
+\texttt{Instruction} instances. To give a hopefully clarifying example,
+consider following supercombinator definition:
+
+\begin{lstlisting}
+calc x y = 3+x*y
+\end{lstlisting}
+
+After compiling it to G-machine instructions it will become:
+
+\begin{lstlisting}[label=lst:gcode_supercombinator,caption={Compiled
+  supercombinator body.}]
+Push 0
+Pushglobal "*"
+Mkap
+Push 2
+Push 1
+Mkap
+Pushglobal "v2"
+Mkap
+Eval
+Update 3
+Pop 3
+Unwind
+\end{lstlisting}
+
+The \texttt{Push n} instruction causes the \texttt{n}$^{th}$ value from the
+stack to be pushed to the top of stack. Simply put, it copies the
+\texttt{n}$^{th}$ argument. When the evaluation of supercombinator begins, the
+stack is rearranged so that function arguments are on the top of the stack.
+Thus \texttt{Push 0} will copy the first function argument to the top of the
+stack. \texttt{Pushglobal v} is meant to push the address of the \texttt{v}
+built-in or supercombinator on the stack. \texttt{Mkap} pops two elements,
+creates an application node on the heap and pushes its address. \texttt{Update
+n} instruction implements the behaviour described in
+Section~\ref{sec:updating}. The \texttt{n} argument represents the offset of
+the root redex from the top of stack. \texttt{Pop n} on the other hand is
+supposed to remove all elements, that supercombinator declared on the stack,
+and leave the result as a top element. The process of executing G-code
+instructions from Listing~\ref{lst:gcode_supercombinator} is shown in figure
+below:
+
+\begin{figure}[h!]
+  \centering
+
+  TODO: G-code execution
+
+  \caption{Execution of supercombinator from Listing~\ref{lst:gcode_supercombinator}.}
+  \label{fig:gcode_execution}
+\end{figure}
+
+\subsection{Compiler implementation}
+
+\section{State transition systems}
 \section{Interpreter}
 \label{sec:interpreter}
 \section{LLVM Code Generator}
