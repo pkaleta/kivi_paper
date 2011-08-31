@@ -15,6 +15,7 @@
 \lstset{ %
 language=Haskell,               % the language of the code
 basicstyle=\ttfamily,       % the size of the fonts that are used for the code
+%frame=lines,
 numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
 stepnumber=2,                   % the step between two line-numbers. If it's 1, each line 
 % will be numbered
@@ -409,12 +410,12 @@ The process of translating a high-level functional language to \textit{lambda
 calculus} might be considered as a set of program transformations. Each such
 transformation is meant to simplify \footnote{or help with further
 transformations} the program given as its input, eventually leading to the
-expected \textit{enriched lambda calculus} form.
-All those transformations accept some form of the program as input and yield
-the simplified program as output. Therefore we might regard the compilation
-process as a function composition of all transformations. This is exactly the
-way the compilation is implemented in Kivi, and Haskell lets to express this
-in a very concise way:
+expected \textit{enriched lambda calculus} form. All these transformations
+accept one form of program as input and yield the transformed program as
+output. We might, therefore, regard the compilation process as a function
+composition of all transformations. This is exactly the way the compilation is
+implemented in Kivi, and Haskell provides means to express this in a very
+concise way:
 
 \begin{lstlisting}
 run :: String -> String
@@ -717,7 +718,7 @@ perform pattern matching in more optimized fashion we have to transform into
 the following form:
 
 \begin{lstlisting}[mathescape=true]
-map = $\lambda$ f.$\lambda$ xs.
+map = $\lambda$f.$\lambda$xs.
     case xs of
         Nil       -> Nil
         Cons y ys -> Cons (f y) (map f ys)
@@ -1988,20 +1989,109 @@ TODO: Example of compiling supercombinator from listing~\ref{lst:sc_to_compile}.
 
 \section{Interpreter}
 \label{sec:interpreter}
-\subsection{State transition systems}
+Interpreter is defined as a program that executes instructions written in
+programming language. There is a variety of ways that interpreter can perform
+evaluation of a program. Kivi takes the approach of first compiling the source
+to intermediate language, called G-code, and later executing these
+instrutions.\footnote{Other ways may include, for example, directly executing
+source code instructions}.
+
+The G-machine is a \textit{finite state machine}. It consists of finite number
+of states as well as transitions between these states. At every moment of
+G-machine execution the state can be described by following tuple:
+
+\subsection{State}
+The meaning of each element is summarized below:
+\begin{itemize}
+  \item \texttt{output} is a \texttt{GmOutput} instance. It contains the otput
+    that program produced during execution.
+  \item \texttt{code} represents the currently executed sequence of
+    instructions. It is implemented as an instance of \texttt{GmCode}.
+  \item \texttt{stack}, \texttt{GmStack} instance, implements the G-machine's runtime
+    stack and keeps the spine of expression.
+  \item \texttt{dump}, described above, is a collection \texttt{GmDumpItems},
+    where:
+    \begin{lstlisting}
+      type GmDumpItem = (GmCode, GmStack, GmVStack)
+    \end{lstlisting}
+    It contains the previous states of execution, that were suspended due to
+    evaluation of built-in function arguments. The dump is going to be unwound
+    when current instruction set depletes.
+  \item the \texttt{GmVStack} is introduced as an optimization to perform
+    arithmetic and logical operations using registers or stack, instead of creating
+    heap nodes for them.
+  \item Supercombinator's graph is being kept on istance of type
+    \texttt{GmHeap}.
+  \item \texttt{GmGlobals} contains global function and operator addresses that
+    point to nodes on the heap
+  \item \texttt{GmStats} is meant to save the statistics gathered during
+    execution. It might be number of reductions, number of nodes allocated,
+    etc.
+
+\end{itemize}
+
+Therefore the G-machine state is implemented as a 8-tuple in
+\textit{Common.hs}. This module contains also a variety of functions to both
+inspect or create new state on the basis of old one. When program execution
+begins, the \texttt{compile} function creates an \textit{initial} state with
+all elements set to default values:
+
+\begin{lstlisting}
+type GmState = ( GmOutput
+               , GmCode
+               , GmStack
+               , GmDump
+               , GmVStack
+               , GmHeap
+               , GmGlobals
+               , GmStats )
+\end{lstlisting}
+
+The \texttt{eval} function is an entry point for interpreter. It analyses
+whether current state is a final one and if this is not the case, dispatches
+the execution to an appropriate routine, based on next instruction in the
+\texttt{GmCode} state component. This implements the transitions between states.
+
+\subsection{State transition rules}
+In G-machine, for each instruction there exists an associated function that
+contains the logic of that specific instruction. In literature it is described
+as \textit{state transition rules}. Given current instruction from
+\texttt{code} as well as state, transition rules create new state where some of
+components are changed due to results of executing that instruction. For
+example, state transition for \texttt{Push n} instruction states, that the
+stack component of G-machine state should have its n$^{th}$ element copied to
+the top. Other elements should remain unchanged:
+
+\begin{lstlisting}
+push :: Int -> GmState -> GmState
+push n state =
+    putStack stack' state
+    where
+        stack' = argAddr : stack
+        argAddr = stack !! n
+        stack = getStack state
+\end{lstlisting}
+
+Assuming that for each
+instruction there exists a unique transformation producing an updated state,
+this gives us a picture of fully deterministic finite automaton.
+
+The reader is advised to refer to \cite{Jon87} and \cite{JonLes00} for full
+description of every transition.
+
 \section{LLVM Code Generator}
 \label{sec:llvm_codegen}
 
 \section{Garbage Collection}
 \label{sec:garbage_collection}
-\textit{Garbage collection}, as described in \cite{wiki:garbage_collection}
-is a form of automatic memory management. It collects and manages the memory
-that was allocated on the heap by running program. By management I mean
-determining which objects in memory will not be needed anymore, so they can be
-safely returned to the free memory pool. Deciding upon which memory is not
-going to be used by the program anymore, is one of the biggest issues in
-designing garbage collector. Another problem is to decide when to run garbage
-collector in order to reclaim memory.
+\textit{Garbage collection} or \textit{GC}, as described in
+\cite{wiki:garbage_collection} is a form of automatic memory management. It
+collects and manages the memory that was allocated on the heap by running
+program. By management I mean determining which objects in memory will not be
+needed anymore, so they can be safely returned to the free memory pool.
+Deciding upon which memory is not going to be used by the program anymore, is
+one of the biggest issues in designing garbage collector. Another important
+problem is to find the correct moment for GC to run.
 
 \subsection{Mark and Sweep GC}
 Current approach that has been taken in Kivi's garbage collection is to
