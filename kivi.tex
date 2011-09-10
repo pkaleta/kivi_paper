@@ -2081,6 +2081,52 @@ description of every transition.
 
 \section{LLVM Code Generator}
 \label{sec:llvm_codegen}
+Compilers usually consist of two parts called \textit{frontend} and
+\textit{backend}. The role of a frontend is to parse the source file, perform
+semantic analysis and emit the processed version of input program called
+\textit{intermediate representation} or \textit{IR} for short. Up to now I have
+described the frontend of Kivi compiler with G-code being its intermediate
+representation. The role of a backend on the other hand is to process the IR,
+optimize it, map values to machine registers and emit an assembly language as
+text. The final pass is done by \textit{assembler} which translates the
+assembly language into binary machine code.
+
+There is a wide choice of how to implement the backend of a compiler. I could
+either write the backend by hand, which would be way more complicated than the
+frontend, or translate the G-code to an existing language, such as C for
+instance. This is the approach taken initially by C++ authors, and it worked
+well because C++'s semantics resembles that of C. Unfortunately this is not the
+case in Kivi, because its semantics is not close enough to C to use a
+straightforward translation. The most obvious reason for this is that C is not
+garbage collected, whereas Kivi is. These were the reasons why I chose another
+way of implementing Kivi's backend, that is to translate source to intermediate
+representation of some compiler toolkit, such as LLVM.
+
+\subsection{Low Level Virtual Machine}
+The \textit{Low Level Virtual Machine} (\cite{website:llvm}) is a compiler
+infrastructure providing a set of compiler and toolchain technologies, designed
+to optimize the compile, link and run time of programs written in variety of
+programming languages. Originally it was an experiment to explore dynamic
+compilation strategies for programming languages, but since then it has grown,
+and gathered a number of subprojects under its name. Therefore it may well
+serve as a middle layer of a full compiler toolchain allowing to derive from
+its advanced optimization techniques. It works by taking an IR code from a
+compiler and producing an optimized IR. The newly produced intermediate
+representation can be linked into machine-dependent assembly code for a target
+platform.
+
+\subsection{LLVM Intermediate Representation}
+Intermediate representation of LLVM provides an independent instruction set and
+type system. It aims to be a low-level and general enough, to make it an easy
+mapping for many high-level languages. The existence of type information,
+usually absent in low-level representations, makes it possible to perform a
+range of optimizations which otherwise won't be possible. Each instruction is
+in \textit{single static assignment} form, which means that every variable can
+be assigned only once and is not allowed to be modified later. Full description
+of LLVM IR instructions can be found at \url{http://llvm.org/docs/LangRef.html}.
+
+\subsection{Code Generation}
+
 
 \section{Garbage Collection}
 \label{sec:garbage_collection}
