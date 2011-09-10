@@ -2126,6 +2126,117 @@ be assigned only once and is not allowed to be modified later. Full description
 of LLVM IR instructions can be found at \url{http://llvm.org/docs/LangRef.html}.
 
 \subsection{Code Generation}
+LLVM code generator is implemented in \textit{CodeGen.hs} file. First, function
+\texttt{genLLVMIR} generates the intermediate representation which is later
+saved to file by \texttt{saveLLVMIR}. However the real heavy-lifting is done in
+\texttt{translateToLLVMIR} with the help of \textit{HStringTemplate} library
+(\cite{website:hstring_template}). It is reponsible for generating code chunks
+by feeding templates that reside in \texttt{templates/} directory with template
+parameters.
+
+The LLVM G-machine implementation consists of similar parts as the previously
+described interpreter one. The code and dump parts are rather straightforward
+because code consist of LLVM IR instructions, whereas dump is represented by
+LLVM call stack. The more interresting bits are stack and heap that are
+described in the next sections.
+
+\subsubsection{Stack implementation}
+G-machine's stack is implemented in \textit{program.st}
+template that aims to provide the global declarations needed later. It is
+represented by a data area to hold the stack elements as well as the stack
+pointer. At each point of thof memorye program the stack pointer, \texttt{@sp} points to
+the top of the stack:
+
+\begin{lstlisting}
+@stack = global [1000 x i64*] undef
+@sp = global i64 undef
+\end{lstlisting}
+
+The drawback of current implementation is that size of the stack has to be
+declared statically, thus not allowing the stack to grow arbitrarily up to
+memory size. In future, however I'm planning to reimplement it to allow dynamic
+memory allocation, similarly as vectors in C++ STL. Stack operations are
+defined as functions in the same file. Thus \texttt{push} and \texttt{pop}
+stack functions are defined as follows:
+
+\begin{lstlisting}[caption={\texttt{push} and \texttt{pop} operations on the
+  LLVM stack.}]
+define void @push(i64* %addr) {
+    ; store address on stack
+    %n = load i64* @sp
+    %ptop = call i64**(i64)* @getItemPtr(i64 %n)
+    store i64* %addr, i64** %ptop
+    ; increment stack pointer
+    call void(i64*)* @incSp(i64* @sp)
+    ret void
+}
+
+define i64* @pop() {
+    %ptop = call i64**()* @getTopPtr()
+    %addr = load i64** %ptop
+    call void(i64*)* @decSp(i64* @sp)
+    ret i64* %addr
+}
+\end{lstlisting}
+
+\texttt{getItemPtr}, \texttt{getTopPtr}, \texttt{incSp} and \texttt{decSp} are
+helper functions implemented in the same file.
+
+
+\subsubsection{Heap implementation}
+G-machine's heap is represented by a memory area in the machine's heap. LLVM
+doesn't provide instructions to manage memory on the heap. Instead one has to
+use \textit{libc} calls to achieve this functionality. Each heap node consist
+of a \textit{tag} and \textit{data}. The role of a tag is to differentiate
+between different types of nodes. For example \texttt{Unwind} G-machine
+instruction performs tag analysis in order to decide how to proceed further.
+This is done using LLVM IR's \texttt{switch} construct and illustrated in
+listing below:
+
+\begin{lstlisting}
+%ptop = call i64**()* @getTopPtr()
+%top = load i64** %ptop
+%tag = load i64* %top
+
+switch i64 %tag, label %otherwise
+    [ i64 1, label %NUM_UNWIND
+      i64 2, label %AP_UNWIND
+      i64 3, label %GLOB_UNWIND
+      i64 4, label %IND_UNWIND
+      i64 5, label %CONSTR_UNWIND ]
+
+NUM_UNWIND:
+...
+CONSTR_UNWIND:
+...
+\end{lstlisting}
+Here, the tag of current cell is retrieved and depending on it, a jump to the
+correct piece of code is performed.
+
+On the other hand data part of node cell contain fields that carry the nodes'
+payload. Both tag and each field occupy 8 bytes of memory. It might seem
+wasteful to allocate 8 bytes for tag, when there are only few of them possible,
+but in the end it made the implementation simpler due to uniform layout of
+cells. As an example we can consider the application node. It contains the tag
+field with the value of 2 inside (defined by \texttt{@AP\_TAG}), as well as
+addresses of two other nodes in the graph, representing function and argument.
+
+Each type of node can be allocated on the heap using a corresponding function.
+For example in order to allocate a number node one would use \texttt{hAllocNum}
+defined as:
+
+\begin{lstlisting}[caption={Definition of function allocating number node on
+  the heap.}]
+define i64* @hAllocNum(i64 %n) {
+    %ptr = call i8*(i64)* @malloc(i64 16)
+    %ptag = bitcast i8* %ptr to i64*
+    %pval = call i64*(i64*)* @getNumPtr(i64* %ptag)
+    %numtag = load i64* @NUM_TAG
+    store i64 %numtag, i64* %ptag
+    store i64 %n, i64* %pval
+    ret i64* %ptag
+}
+\end{lstlisting}
 
 
 \section{Garbage Collection}
