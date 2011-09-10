@@ -2125,15 +2125,7 @@ in \textit{single static assignment} form, which means that every variable can
 be assigned only once and is not allowed to be modified later. Full description
 of LLVM IR instructions can be found at \url{http://llvm.org/docs/LangRef.html}.
 
-\subsection{Code Generation}
-LLVM code generator is implemented in \textit{CodeGen.hs} file. First, function
-\texttt{genLLVMIR} generates the intermediate representation which is later
-saved to file by \texttt{saveLLVMIR}. However the real heavy-lifting is done in
-\texttt{translateToLLVMIR} with the help of \textit{HStringTemplate} library
-(\cite{website:hstring_template}). It is reponsible for generating code chunks
-by feeding templates that reside in \texttt{templates/} directory with template
-parameters.
-
+\subsection{Representing G-machine state}
 The LLVM G-machine implementation consists of similar parts as the previously
 described interpreter one. The code and dump parts are rather straightforward
 because code consist of LLVM IR instructions, whereas dump is represented by
@@ -2210,8 +2202,9 @@ NUM_UNWIND:
 CONSTR_UNWIND:
 ...
 \end{lstlisting}
-Here, the tag of current cell is retrieved and depending on it, a jump to the
-correct piece of code is performed.
+Here, the top stack element is fetched first, next the tag of current cell is
+retrieved and depending on it, a jump to the correct piece of code is
+performed.
 
 On the other hand data part of node cell contain fields that carry the nodes'
 payload. Both tag and each field occupy 8 bytes of memory. It might seem
@@ -2237,6 +2230,53 @@ define i64* @hAllocNum(i64 %n) {
     ret i64* %ptag
 }
 \end{lstlisting}
+
+\subsection{Code Generation}
+Until now I have discussed the building blocks of LLVM code generator, yet
+haven't said anything about how translation from G-code instructions to LLVM IR
+really works. In this chapter I'm going to fix that.
+
+LLVM code generator is implemented in \textit{CodeGen.hs} file. First, function
+\texttt{genLLVMIR} generates the intermediate representation which is later
+saved to file by \texttt{saveLLVMIR}. However the real heavy-lifting is done in
+\texttt{translateToLLVMIR} with the help of \textit{HStringTemplate} library
+(\cite{website:hstring_template}). It is reponsible for generating code chunks
+by feeding templates that reside in \texttt{templates/} directory with template
+parameters.
+
+Code generator is called for each supercombinator and fetches its instructions.
+After that \texttt{translateToLLVM} folds over these instructions and pattern
+match on instruction type. For each of them there's a separate routine that
+seeks for the corresponding template and instantiate it with parameters
+substituted for G-code instruction arguments. Such filled supercombinator
+templates are gathered and injected into the program's global template which is
+saved to a file on a disk. As an example consider the code that instantiates a
+template for \texttt{Pushint n} instruction:
+
+\begin{lstlisting}
+translateToLLVMIR mapping templates ninstr (Pushint n) =
+    (ir ++ [template'], ninstr + 1)
+    where
+        Just template = getStringTemplate "pushint" templates
+        template' = setManyAttrib [("n", show n), ("ninstr", show ninstr)] template
+\end{lstlisting}
+
+The code on listing above fetches the correct template, and sets the required
+attributes. Corresponding \texttt{Pushint} template is presented below:
+\begin{lstlisting}
+; *************** Pushint $n$ ***************
+; create the num node on the heap
+%ptag.$ninstr$ = call i64*(i64)* @hAllocNum(i64 $n$)
+
+; push node address onto the stack
+call void(i64*)* @push(i64* %ptag.$ninstr$)
+\end{lstlisting}
+
+The \textit{gaps} to be filled with arguments are surrounded with \texttt{\$}
+signs. As expected, this template when instantiated will allocate the number
+node on the heap and later push the address of that node on stack. Each
+variable defined has unique suffix because of static single assignment feature
+of LLVM IR.
 
 
 \section{Garbage Collection}
