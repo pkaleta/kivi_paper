@@ -161,7 +161,7 @@ TODO: Grammar of the language
 This two-phase process is implemented as\footnote{Where \texttt{PatProgram}
 is program containing patterns}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}
 parse :: String -> PatProgram
 parse = syntax . lex
@@ -171,7 +171,7 @@ parse = syntax . lex
 
 The types for lexer are following:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}
 type Token = String
 type TokenInfo = (Int, Token)
@@ -182,7 +182,7 @@ The heart of \textit{lexical analyser} is the \texttt{lex'} function. It works
 by classifying the parts of remaining input based on first characters.
 Building number tokens may be a nice example of how it works:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[label=lst:lex_comment,caption={Building tokens from numbers.}]
 lex' (c : cs) lnum | isDigit c =
     (lnum, numToken) : lex' restCs lnum
@@ -208,7 +208,7 @@ be reused and forms the basic idea of \textit{parametric poylmorphism}
 (see \cite{website:parametric_polymorphism}). The data type definition is
 following:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}
 data Expr a = EVar Name
             | ENum Int
@@ -231,7 +231,7 @@ definitions as well as in \texttt{case} expressions. To give an e example of
 how a simple source code construct will look, when parsed to AST,  lets look at
 the following example:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}
 let
     x = 1;
@@ -244,7 +244,7 @@ the output from \texttt{parse} is more complicated because it returns programs
 with patterns. However in order to grasp the concept of parametrized
 \texttt{Expr} type its easier to forget about that fact for a while.}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}
   ELet False
        [('x', ENum 1), ('y', ENum 2)]
@@ -287,7 +287,7 @@ body. Supercombinators might have arguments, and those which doesn't are called
 Listing~\ref{supercombinator_ex} shows the simple supercombinator with one
 argument.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=supercombinator_ex,caption={Simple supercombinator.}]
 sqr x = x * x
 \end{lstlisting}
@@ -304,7 +304,7 @@ simple. First, the expression under case is evaluated and then based on result,
 the appriopriate execution path is chosen. Example of case expression is
 presented in Listing~\ref{lst:case_ex}.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:case_ex,caption={Fibonacci with case}]
 fib n =
     case n of
@@ -327,7 +327,7 @@ Supercombinators provides the ability to define local definitions using
 enclosed by the expression following \texttt{in} keyword. The example use of
 local binding is presented in Listing~\ref{let_ex}
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=let_ex,caption={Local \texttt{let} binding.}]
 sum x y = x + y;
 
@@ -342,7 +342,7 @@ main =
 In order to define mutually recursive bindings using \texttt{let} one has to use the
 special \texttt{letrec} construct as shown in Listing~\ref{factorial_letrec_ex}
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=factorial_letrec_ex,caption={Factorial function using \texttt{letrec}.}]
 sum x y = x + y;
 
@@ -360,7 +360,7 @@ Another way of creating recursive definitions is using the \texttt{where}
 clause. Internally it will be translated into letrec binding. Example use of
 \texttt{where} clause is shown in Listing~\ref{factorial_where_ex}
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=factorial_where_ex,caption={Factorial function using \texttt{where}.}]
 main = fac 5
     where
@@ -376,7 +376,7 @@ them as \textit{lambda abstractions}. This concept is similar to \textit{anonymo
 functions} used in imperative languages. The syntax for defining lambda
 abstractions is presented in Listing~\ref{lambda_ex}.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lambda_ex,caption={Lambda abstraction}]
 f = (\x . x * 2) 42
 \end{lstlisting}
@@ -402,7 +402,7 @@ result returned. None of the following patterns is checked. If after checking
 all patterns it turns out that none of them matches the argument, the error is
 returned.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=pattern_matching_ex,caption={Factorial using pattern matching.}]
 fac 0 = 1
 fac n = n * fac (n - 1)
@@ -423,7 +423,7 @@ Data types in Kivi are defined using \texttt{data} keyword, giving the name of
 new type as well as its constructors and arities. Together with pattern matching they
 provide a very powerful mechanism for dealing with structured entities.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=data_type_ex,caption={Calculating length of list.}]
 data List = Nil 0 | Cons 2;
 
@@ -457,7 +457,7 @@ composition of all transformations. This is exactly the way the compilation is
 implemented in Kivi, and Haskell provides means to express this in a very
 concise way:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 run :: String -> String
 run = showResults
@@ -480,7 +480,7 @@ In order to understand the need for this pass one has to know how structured
 data types and their constructors are represented internally.
 A custom data type declaration in Kivi might look like this one:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 data Tree = Leaf 1 | Branch 2
 \end{lstlisting}
@@ -494,7 +494,7 @@ value. The other way to construct a \texttt{Tree} is to create a \texttt{Branch}
 taking two children (which also are \texttt{Tree}s) as arguments. For example,
 conceptual representation of the following tree is shown in Figure~\ref{fig:tree}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))
 \end{lstlisting}
@@ -514,7 +514,7 @@ constructor. This feature is heavily used when pattern matching. For example
 the code in Listing~\ref{lst:sqr_tree} uses it to create a new tree with values
 that are square roots of values in original tree.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[label=lst:sqr_tree,caption={Creating a `square rooted` tree.}]
 sqrTree (Leaf v) = Leaf (v * v)
 sqrTree (Branch t1 t2) = Branch (sqrTree t1) (sqrTree t2)
@@ -530,7 +530,7 @@ notion of data types.
 Boolean values in Kivi are implemented as a regular Structured Data Type having
 two constructors representing true and false:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 data Boolean = True | False
 \end{lstlisting}
@@ -545,7 +545,7 @@ Kivi provides a variety of way to define a list. First of all lists can be seen
 as regular Data Type. Thus there are two constructors for a \texttt{List}
 data type. \texttt{Nil} and \texttt{Cons}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 data List = Nil 0 | Cons 2
 \end{lstlisting}
@@ -559,7 +559,7 @@ It turns out that creating a \texttt{List} is a task that occurs very often in
 functional languages, therefore it would be nice not to have to write long
 constructs such as this one to create 4-element \texttt{List}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))
 \end{lstlisting}
@@ -567,7 +567,7 @@ Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))
 Most functional languages allow programmer to express it in a much shorter way,
 and Kivi does it too:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 [1, 2, 3, 4]
 \end{lstlisting}
@@ -576,13 +576,13 @@ The same thing concern constructing lists given two elements. Kivi provides
 `:`(colon) as construction operator for \texttt{List} type, so the programmer
 would write:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 ((2+3) : [1,2,3,4])
 \end{lstlisting}
 instead of:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 Cons (2+3)  [1,2,3,4]
 \end{lstlisting}
@@ -611,13 +611,13 @@ special \textit{syntactic sugar} construct, similarly as in the case for lists.
 These two ways for instantiating a 3-element tuple are equivalent, with the
 preference for the second one, due to readability concerns:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 (((Tuple3 1) 2) 3)
 \end{lstlisting}
 and
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 (1, 2, 3)
 \end{lstlisting}
@@ -629,7 +629,7 @@ each constructor therefore each tag should be different. The definitions
 for \texttt{DataType} and \texttt{Constructor} type synonyms, as in
 \textit{Common.hs} are as follows:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 type DataType = (Name, [Constructor])
 type Constructor = (Name, Int, Int)
@@ -659,7 +659,7 @@ This section describes the details and motivation behing pattern matching as
 well as describes details of algorithms that transform high-level pattern
 matching constructs into enriched lambda calculus.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:length,caption={Calculating length of list.}]
 length [] = 0;
 length (x : xs) = length xs + 1
@@ -673,13 +673,13 @@ calculating the length of a list, and also presents the version of the same
 function but without \textit{syntactic sugar}. For the purpose of further
 discussion lets assume that we're calculating the length of 3-element list:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 [1, 2, 3]
 \end{lstlisting}
 which is the same as:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 Cons 1 (Cons 2 (Cons 3 Nil))
 \end{lstlisting}
@@ -699,7 +699,7 @@ variables. Nothing prevents programmer from creating the so called
 Listing~\ref{lst:second_element}, where the function is extracting the second
 element from the list.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:second_element,caption={Greatest common divisor.}]
 second [] = 0;
 second [x] = 0;
@@ -711,7 +711,7 @@ means that changing the order of function equations would not alter the
 behaviour of the function. The situation changes when we look at example
 presented in Listing~\ref{lst:gcd}.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:gcd,caption={Greatest common divisor.}]
 gcd a 0 = a;
 gcd a b = gcd b (b % a)
@@ -731,7 +731,7 @@ reality, however, it requires quite a complicated additional pass that
 transform let(rec)s into more suitable form.  This transformation is described
 in more detail in Section~\ref{sec:letrec_transform}.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:case_pattern_matching,caption={Pattern matching in
 case expressions.}]
 sqrList list =
@@ -740,7 +740,7 @@ sqrList list =
         (x : xs) -> ((x * x) : sqrList xs)
 \end{lstlisting}
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:letrec_pattern_matching,caption={Pattern matching
   in let(rec) expressions.}]
 let
@@ -757,7 +757,7 @@ equation patterns are tested from left to right\footnote{In case of functions
 with multiple patterns}. Lets consider an example of \texttt{map} function from
 Listing~\ref{lst:map}.
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:map,caption={Map function example.}]
 map f [] = [];
 map f (x : xs) = ((f x) : (map f xs));
@@ -780,7 +780,7 @@ complicated patterns it might be a substantial drawback. In order to be able to
 perform pattern matching in more optimized fashion we have to transform into
 the following form:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 map = $\lambda$f.$\lambda$xs.
     case xs of
@@ -798,7 +798,7 @@ refer to Chapters 4 and 5 of \cite{Jon87}.
 In lambda calculus, regular lambda abstraction is an expression of the
 following form:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 $\lambda x.t$
 \end{lstlisting}
@@ -814,7 +814,7 @@ The difference between regular and pattern-matching lambda abstractions lies in
 a fact that instead of variable $x$ on the left side a pattern might be
 used. So it might look like that:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 $\lambda p.t$
 \end{lstlisting}
@@ -842,7 +842,7 @@ abstractions}
 For the purpose of further explanations lets consider the following function
 definition:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 $f\:p_{1} = e_{1}$
 $f\:p_{2} = e_{2}$
@@ -857,7 +857,7 @@ none of the following patterns should be matched against. In the second one an
 error should be reported that no matching branch was found. With this in mind
 we can translate the definition of $f$ into following one:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 f = $\lambda$x.((($\lambda p_{1}'$.$e_{1}'$) x) []
         (($\lambda p_{2}'$.$e_{2}'$) x) []
@@ -874,14 +874,14 @@ pattern to match against in case of current pattern's failure.
 Lets see our translation in action taking as an example the \texttt{map}
 function:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 map f [] = [];
 map f (x : xs) = ((f x) : (map f xs))
 \end{lstlisting}
 The result of such translation would be following:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 map = $\lambda$f.$\lambda$xs.((($\lambda$Nil.Nil) xs) []
               (($\lambda$(Cons y ys).(Cons (f x) (map f ys))) xs) []
@@ -897,7 +897,7 @@ that error to occur.
 
 In general a multi-pattern function definition in Kivi of the form:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 f $p_{1,1}$ $p_{1,2}$ $\ldots$ $p_{1,n}$ = $e_{1}$
 f $p_{2,1}$ $p_{2,2}$ $\ldots$ $p_{2,n}$ = $e_{2}$
@@ -906,7 +906,7 @@ f $p_{m,1}$ $p_{m,2}$ $\ldots$ $p_{m,n}$ = $e_{m}$
 \end{lstlisting}
 is going to be translated into:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 f = $\lambda v_{1}$.$\lambda v_{2}$ $\ldots$ $\lambda v_{n}$.(($\lambda p_{1,1}'$.$\lambda$.$p_{1,2}'$ $\ldots$ $\lambda p_{1,n}'$) $v_{1}$ $v_{2}$ $\ldots$ $v_{n}$) []
                  (($\lambda p_{2,1}'$.$\lambda$.$p_{2,2}'$ $\ldots$ $\lambda p_{2,n}'$) $v_{1}$ $v_{2}$ $\ldots$ $v_{n}$) []
@@ -924,7 +924,7 @@ specifically \texttt{matchSc} is the one that performs pattern matching on
 supercombinators, and \texttt{matchEquations} matches function definition
 equations. \texttt{matchEquations} has the following type signature:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 matchEquations :: NameSupply
                -> [DataType]
@@ -946,7 +946,7 @@ where
     instances consist of name and list of \texttt{Constructor} instances.
     \texttt{Constructor}s in turn are built from name, tag and arity:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 type DataType = (Name, [Constructor])
 type Constructor = (Name, Int, Int)
@@ -958,7 +958,7 @@ type Constructor = (Name, Int, Int)
   \item \texttt{eqs}: Function equations. They consist of list of patterns as
     well as expression body:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 type Equation = ([Pattern], Expr Pattern)
 \end{lstlisting}
@@ -970,7 +970,7 @@ Section~\ref{sec:syntax_analysis}.
 To give an example of how such expression with patterns might look like, let me
 show you this \texttt{case} expression:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 case [1] of
     []       -> 0;
@@ -980,7 +980,7 @@ Syntax analyser will transform this source code into the following internal AST
 representation\footnote{\texttt{EConstr 2 0} represents a \texttt{Nil}
 constructor, whereas \texttt{EConstr 3 2} stands for \texttt{Cons} constructor.}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 ECaseConstr ((EConstr 3 2 (ENum 1)) (EConstr 2 0))
             [(PConstr 2 0 [], ENum 0),
@@ -992,7 +992,7 @@ Patterns might be numbers, variables, constructors or special entities standing
 for patterns chosen when none of other branches match. Below, the definition of
 \texttt{Pattern} type is presented:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 data Pattern = PNum Int
              | PVar Name
@@ -1034,7 +1034,7 @@ Our previous example, the \texttt{map} function eventually runs into a situation
 where variable rule is applicable\footnote{This is a simplified call to
 \texttt{matchEquations} where not all arguments are present}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 matchEquations [$v_{1}$, $v_{2}$]
                [([f, Nil], Nil),
@@ -1043,7 +1043,7 @@ matchEquations [$v_{1}$, $v_{2}$]
 \end{lstlisting}
 After applying the variable rule it would have such form:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:variable_rule, caption={State after applying
   variable rule.}, mathescape=true]
 matchEquations [$v_{2}$]
@@ -1066,7 +1066,7 @@ After applying variable rule we've reached the state presented in
 Listing~\ref{lst:variable_rule}. Here there are two constructors for two
 equations: \texttt{Nil} and \texttt{Cons} so constructor rule applies:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:constructor_rule, caption={State after applying
   constructor rule.}, mathescape=true]
 case $v_{2}$ of
@@ -1083,14 +1083,14 @@ The need for additional rule arises from the case when neither all equations
 begin with variable nor with constructor, hence the name - mixture rule. Here
 is an example of function that causes such situation to occur:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}
 length (x : xs) = 1 + length xs;
 length empty = 0
 \end{lstlisting}
 After transforming this function we'll get:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:mixture_length, mathescape=true,
   caption={Mixture rule application.}]
 matchEquations [$v_{1}$]
@@ -1105,7 +1105,7 @@ constructors or variables or numbers, etc. This logic is implemented by
 is done it's easy to work out other details. The \texttt{matchEquations} call
 from Listing~\ref{lst:mixture_length} is equivalent to following one:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 matchEquations [$v_{1}$]
                [([Cons x xs], 1 + length xs)]
@@ -1116,7 +1116,7 @@ matchEquations [$v_{1}$]
 After evaluating each of the \texttt{matchEquations} calls the length function
 will look like this:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 length = $\lambda v_{1}$
     case $v_{1}$ of
@@ -1130,7 +1130,7 @@ Eventually, after applying the previous rules, our algorithm will run into a
 situation where the variable list \texttt{vs} is empty, such as the one at
 Listing~\ref{lst:constructor_rule} in the case for \texttt{Nil} constructor:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 matchEquations [] [] expr
 \end{lstlisting}
@@ -1182,7 +1182,7 @@ We can distinguish two different types of \texttt{let(rec)} bindings:
 \textit{Refutable} and \textit{irrefutable} ones. Let's look at this sample
 \texttt{let} expression:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true,label=lst:conformality_check,caption={Pattern matching \texttt{let} binding.}]
 let (Cons x xs) = $expr$ in ...
 \end{lstlisting}
@@ -1221,7 +1221,7 @@ patterns that might fail in one place we need to find a way to transform
 our running example from Listing~\ref{lst:conformality_check} our compiler
 would transform this expression into:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 let (Cons x xs) = let $v_{1}$ = $expr$
                   in (($\lambda$p.(Cons x xs)) $v_{1}$) [] Error
@@ -1231,7 +1231,7 @@ where $v_{1}$ is newly introduced unique variable.
 Based on that observation we could derive the general form of conformality
 transformation from:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 let $p_{1}$ = $e_{1}$;
     $p_{2}$ = $e_{2}$;
@@ -1241,7 +1241,7 @@ in $\ldots$
 \end{lstlisting}
 into:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 let
     ($c_{k1}$ $v_{1,1}$ $\ldots$ $v_{1,k1}$) = let $w_{1}$ = $e_{1}$
@@ -1262,7 +1262,7 @@ The function which calculates the $Var(p_i)$ set is called
 \texttt{getPatternVarNames} and its behaviour is works by collecting already
 seen variable names while recursively traversing the pattern:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 getPatternVarNames :: Pattern -> [Name]
 getPatternVarNames (PNum n) = []
@@ -1286,7 +1286,7 @@ patterns are already simple, so there's nothing else to do. On the other hand
 when patterns are irrefutable constructor patterns they are take the following
 form:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
   let ($c$ $p_1, p_2 \ldots, p_n$) = $expr$ in $\ldots$
 \end{lstlisting}
@@ -1296,7 +1296,7 @@ transformation\footnote{Without loss of generality we can assume that each
 \texttt{let} contains only one definition. Every program could be easily
 transformed to conform to this condition.}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 let $v$ = $expr$
 in (let $p_1$ = $Select\mbox{-}r\mbox{-}1$ $v$;
@@ -1310,13 +1310,13 @@ constructor, whereas each $Select\mbox{-}r\mbox{-}i$ is a function that selects
 the $i^{th}$ component of a constructor with arity $r$. Again a simple example
 should clarify this:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 let (Cons x xs) = (Cons 1 (Cons 2 (Cons 3 Nil)))
 \end{lstlisting}
 after applying the aforementioned transformation will be converted into:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 let $v$ = (Cons 1 (Cons 2 (Cons 3 Nil)))
 in (let x  = $Select\mbox{-}2\mbox{-}1$ $v$;
@@ -1333,7 +1333,7 @@ from all definitions should be groupped together in order to ensure that
 they're visible from other bindings. Here's the general scheme for such
 conversion:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 letrec ($c_1$ $p_{1,1}, p_{1,2} \ldots, p_{1,n1}$) = $e_1$
        ($c_2$ $p_{2,1}, p_{2,2} \ldots, p_{2,n2}$) = $e_2$
@@ -1343,7 +1343,7 @@ in $expr$
 \end{lstlisting}
 is going to be translated into following expression:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 letrec
     $v_1$ = $e_1$;
@@ -1389,7 +1389,7 @@ expressions are not always as optimal as they could, is twofold:
 \end{itemize}
 Consider the following Kivi binding as an illustration of that fact:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:letrec_dependency_example,caption={Example of
   \texttt{letrec} before dependency analysis.}]
 letrec
@@ -1405,7 +1405,7 @@ in
 After analysing the dependencies and splitting the letrec into minimal
 subgroups the expression will become:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:letrec_after_anlysis,caption={\texttt{letrec}
   after performing dependency anlysis.}]
 let
@@ -1507,7 +1507,7 @@ for \texttt{let(rec)} expressions. First of all, each AST expression is
 augumented with its free variables. Based on that, function \texttt{getEdges}
 folds over \texttt{letrec} bindings and creates edges of the dependency graph:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 getEdges edges (name, (rhsFree, rhs)) =
     edges ++ [(name, v) | v <- (Set.toList $ Set.intersection binderSet rhsFree)]
@@ -1520,7 +1520,7 @@ using forward edges, as well as sets of vertices accessible using backward
 edges. By computing the intersection of these sets, we can effectively get
 component of vertex $x$:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 scc :: Show a => Ord a => (a -> [a]) -> (a -> [a]) -> [a] -> [Set a]
 scc ins outs vs = topSortedSccs
@@ -1550,7 +1550,7 @@ carrying additional information needed for transformations described in this
 chapter. The type that implements this was called \texttt{AnnExpr} and has
 been placed in \textit{LambdaLifter.hs}. Its full definition is following:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:annotated_expression]
 type AnnExpr a b = (b, AnnExpr' a b)
 
@@ -1590,7 +1590,7 @@ example of this we'll analyse the following Kivi function that multiplies two
 integers without using the multiplication operator (in a rather not the most
 optimal fashion)
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 mul 0 y = 0;
 mul x 0 = 0;
@@ -1604,7 +1604,7 @@ The \texttt{sum} lambda abstraction can be removed by introducting a new
 \texttt{sum'} supercombinator, that takes an additional argument $t$ as shown at
 the example below:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 $sum'$ $t$ a = $t$ + a
 mul 0 y = 0;
@@ -1620,7 +1620,7 @@ free in the body of lambda abstraction before transformation.
 
 The lambda lifting algorithm consists of four parts executed one after another:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 lambdaLift :: CoreProgram -> CoreProgram
 lambdaLift (adts, scs) = (adts, collectScs . rename . abstract . freeVars $ scs)
@@ -1638,7 +1638,7 @@ supercombinator definitions into the similar list\footnote{\texttt{AnnProgram}
 type, according to Listing~\ref{lst:annotated_expression}, is just the list of
 annotated supercombinator definitions}:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 freeVars :: [CoreScDefn] -> AnnProgram Name (Set Name)
 \end{lstlisting}
@@ -1666,7 +1666,7 @@ After each expression has the set of its free variables assigned, the algorithm
 proceeds by abstracting out the free variables from each lambda abstraction and
 introducting the \texttt{let} binding of the form:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
 (let sc = \$v_1$ $v_2$ $\ldots$ $v_n$ $x_1$ $x_2$ $\ldots$ $x_n$ . $expr$ in sc) $v_1$ $v_2$ $\ldots$ $v_n$
 \end{lstlisting}
@@ -1675,7 +1675,7 @@ for $v_1$, $v_2$, $\ldots$, $v_n$ being free variables of lambda abstraction.
 The code responsible for this is in the \texttt{abstractExpr} function in the
 branch where \texttt{ALam} expressions are considered:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 abstractExpr (freeVars, ALam args expr) =
     foldl EAp sc $ map EVar freeVarsList
@@ -1688,14 +1688,14 @@ abstractExpr (freeVars, ALam args expr) =
 The example of how this code would perform on a real case might be as the one
 below. The lambda abstraction:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 (\x . y * y + x * z + tmp)
 \end{lstlisting}
 
 will be transformed into:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 (let sc = (\y z tmp x . y * y + x * z + tmp) in sc) y z x
 \end{lstlisting}
@@ -1713,7 +1713,7 @@ definitions is given. It works by recursively visiting each AST expression and
 performing a rename where applicable. Example function that is supposed to
 rename variables in \texttt{EVar} expression:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 renameExpr newNamesFun mapping ns (EVar v) =
     (ns, EVar v')
@@ -1754,11 +1754,9 @@ collect supercombinators from:
     \texttt{collectDef}.
 \end{itemize}
 
-
-
 \section{Lazy Lambda Lifting}
 
-\section{Type Checker}
+\chapter{Type checking}
 \textit{Type checking} is a process verifying and demanding certain conditions
 to hold in regard to types of objects in a computer program. One way to
 categorize programming languages is by the time when type checking is
@@ -1768,7 +1766,7 @@ types can take place either at compile-time, which is often called a
 \textit{static typing} or during run-time, which is known as \textit{dynamic
 typing}.
 
-\subsection{Static and Dynamic Typing}
+\section{Static and Dynamic Typing}
 Static typing allows to catch many type errors early in the development cycle.
 This, at least in theory, should improve the robustness of the final program.
 Nevertheless that static type checker can only utilize information that are
@@ -1791,7 +1789,7 @@ available at runtime. This data might also make it possible to perform more
 advanced type checks which might result in certain optimizations which would
 otherwise be impossible.
 
-\subsection{Polymorphism}
+\section{Polymorphism}
 Polymorphism, in regard to programming languages, relates to the ability of a
 computer program to contain many types or to act on many types. The common way
 to achieve it is to allow different instances of certain structures to perform
@@ -1804,7 +1802,7 @@ polymorphism} \cite{Car88}.
 Parametric polymorphism is a language feature that allows one piece of code to
 act in the same way on chunks of data that may not necessarily have the
 identical type. In this context word \textit{parametric}, refers to types of
-objects, which may be seen as parameters of some block of code. There is a
+objects, which may be seen as \textit{parameters} of some block of code. There is a
 distinction between two kinds of parametric polymorphism:
 
 \begin{itemize}
@@ -1813,9 +1811,72 @@ distinction between two kinds of parametric polymorphism:
     programmer.
   \item \textit{implicit parametric polymorphism} on the other hand, occurs
     when type declarations are not present directly in source and types can
-    contain type variables, which are holes to be later filled with certain
+    contain type variables, which are 'holes' to be later filled with certain
     types.
 \end{itemize}
+
+In case of implicit polymorphism, information that has been omitted have to
+later be rediscovered. The ability of a compiler to deduce missing types
+(either fully or partially) is called \textit{type inference}. Using a compiler
+that supports implicit polymorphism, as well as has inferencing mechanisms
+implemented, a programmer can leave out the types of expressions while having
+his program rigorously type-checked as the types were there. It has to be
+mentioned however, that can be successfully typed using explicit polymorphism,
+but types cannot be inferred for them using implicit one.
+
+The algorithm to type check the program, that I have implemented in Kivi, is
+known as \textit{Hindley-Milner algorithm}. Its most appealing property is that
+type inference comes at no extra cost. In its search for missing types, the
+most general typing possible is returned.
+
+\section{Hindley-Milner algorithm}
+Informally Hindley-Milner algorithm works by inspecting an expression and
+creating a set of type constraints that are based on the usages of certain
+values. Once the set is complete, the process called \textit{unification} takes
+place in order to reconstruct the types. Unification checks whether there exist
+a typing, such that all constraints would be satisfied. In case such typing
+exist, it means that expression is well-typed and the typing is returned.
+On the other hand if at least two constraints cannot be unified to a common
+type, it means that algorithm is incapable of devising a correct typing for an
+expression. As an example consider the following function
+definition\footnote{The case when \texttt{head} is given an empty list is
+ommitted in order to reduce verbosity.}:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+head (x : xs) = x
+\end{lstlisting}
+
+First step is to assign fresh type variables to every function parameter as
+well as its return type. This serves as initial set of constraints:
+
+\vspace*{0.2in}
+\begin{lstlisting}[mathescape=true,style=haskell]
+  x :: $\alpha$
+  xs :: $\beta$
+  head :: $\gamma \rightarrow \delta$
+\end{lstlisting}
+
+From the set of built-in constraints we know that \texttt{:} is a cons operator
+of type $\epsilon \rightarrow [\epsilon]$ so we can unify $\gamma$ to
+$[\epsilon]$. Therefore we know that \texttt{head} takes list as an argument.
+Also because of that we can unify $\alpha$ and $\beta$, the types for
+\texttt{x} and \texttt{xs} variables, with respectively $\epsilon$ and
+$[\epsilon]$:
+
+\vspace*{0.2in}
+\begin{lstlisting}[mathescape=true,style=haskell]
+  x :: $\epsilon$
+  xs :: $[\epsilon]$
+  head :: $[\epsilon] \rightarrow \epsilon$
+\end{lstlisting}
+
+This completes the derivation of types for \texttt{head} function. It was an
+informal look of how Hindley-Milner retrieves missing types. In order to gain
+more insight of how real algorithm works, I encourage to read the rest of this
+chapter which dives into the implementation details.
+
+\subsection{Implementation}
 
 
 \chapter{The G-machine}
@@ -2030,7 +2091,7 @@ executed on a virtual machine, the G-machine. The latter may be regarded as
 In Kivi the set of G-code instructions available is presented as an excerpt
 from \textit{Common.hs} module below:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 type GmCode = [Instruction]
 
@@ -2065,14 +2126,14 @@ Here, \texttt{GmCode} type represents the G-code and is a simple list containing
 \texttt{Instruction} instances. To give a hopefully clarifying example,
 consider following supercombinator definition:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:sc_to_compile,caption=Supercombinator to compile.]
 calc x y = 3+x*y
 \end{lstlisting}
 
 After compiling it to G-machine instructions it will become:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:gcode_supercombinator,caption={Compiled
   supercombinator body.}]
 Push 0
@@ -2121,7 +2182,7 @@ certain conditions. For example the scheme implemented by \texttt{compileA}
 function, is chosen when compiling branches of case expression. The main data
 type representing compiler is \texttt{GmCompiler} defined as below:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 type GmCompiler = CoreExpr -> GmEnvironment -> GmCode
 type GmEnvironment = Assoc Name Int
@@ -2135,7 +2196,7 @@ environment produces G-machine instructions. Compilation process starts from
 an initial state prepared for either interpretation or further compilation (into
 LLVM intermediate representation, in case of Kivi):
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 compile :: CoreProgram -> GmState
 compile (dts, scs) = ([], initialCode, [], [], [], heap, globals, initialStats)
@@ -2147,7 +2208,7 @@ Here, the \texttt{buildInitialHeap} is used to fold over each supercombinator,
 create a node of \texttt{NGlobal} type for it on the heap. Other possible node
 types that might occur on the heap are:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 data Node = NNum Int
           | NChar Int
@@ -2168,7 +2229,7 @@ in accordance to the type of expression. Look at the case when
 \texttt{EAp}\footnote{This expression type represents function applications.}
 expression:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 compileC (EAp e1 e2) env =
     compileC e2 env ++
@@ -2216,7 +2277,7 @@ The meaning of each element is summarized below:
   \item \texttt{dump}, described above, is a collection \texttt{GmDumpItems},
     where:
 
-    \hspace*{-1.5in}
+    \vspace*{0.2in}
     \begin{lstlisting}[style=haskell]
       type GmDumpItem = (GmCode, GmStack, GmVStack)
     \end{lstlisting}
@@ -2242,7 +2303,7 @@ inspect or create new state on the basis of old one. When program execution
 begins, the \texttt{compile} function creates an \textit{initial} state with
 all elements set to default values:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 type GmState = ( GmOutput
                , GmCode
@@ -2269,7 +2330,7 @@ example, state transition for \texttt{Push n} instruction states, that the
 stack component of G-machine state should have its n$^{th}$ element copied to
 the top. Other elements should remain unchanged:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 push :: Int -> GmState -> GmState
 push n state =
@@ -2347,7 +2408,7 @@ represented by a data area to hold the stack elements as well as the stack
 pointer. At each point of thof memorye program the stack pointer, \texttt{@sp} points to
 the top of the stack:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=assembler]
 @stack = global [1000 x i64*] undef
 @sp = global i64 undef
@@ -2360,7 +2421,7 @@ memory allocation, similarly as vectors in C++ STL. Stack operations are
 defined as functions in the same file. Thus \texttt{push} and \texttt{pop}
 stack functions are defined as follows:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=assembler,caption={\texttt{push} and \texttt{pop} operations on the
   LLVM stack.}]
 define void @push(i64* %addr) {
@@ -2395,7 +2456,7 @@ instruction performs tag analysis in order to decide how to proceed further.
 This is done using LLVM IR's \texttt{switch} construct and illustrated in
 listing below:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=assembler]
 %ptop = call i64**()* @getTopPtr()
 %top = load i64** %ptop
@@ -2429,7 +2490,7 @@ Each type of node can be allocated on the heap using a corresponding function.
 For example in order to allocate a number node one would use \texttt{hAllocNum}
 defined as:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=assembler,caption={Definition of function allocating number node on
   the heap.}]
 define i64* @hAllocNum(i64 %n) {
@@ -2465,7 +2526,7 @@ templates are gathered and injected into the program's global template which is
 saved to a file on a disk. As an example consider the code that instantiates a
 template for \texttt{Pushint n} instruction:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 translateToLLVMIR mapping templates ninstr (Pushint n) =
     (ir ++ [template'], ninstr + 1)
@@ -2479,7 +2540,7 @@ translateToLLVMIR mapping templates ninstr (Pushint n) =
 The code on listing above fetches the correct template, and sets the required
 attributes. Corresponding \texttt{Pushint} template is presented below:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=assembler]
 %ptag.$ninstr$ = call i64*(i64)* @hAllocNum(i64 $n$)
 call void(i64*)* @push(i64* %ptag.$ninstr$)
@@ -2516,7 +2577,7 @@ Garbage collection is being triggered when the number of allocated heap nodes
 reaches a certain, configurable threshold value. In such case, the entry point
 function, \texttt{gc} is called:
 
-\hspace*{-1.5in}
+\vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
 gc :: GmState -> GmState
 gc state = putHeap heap' state
@@ -2545,8 +2606,6 @@ several parts:
     cycle.
 \end{itemize}
 
-
-\chapter{Further work}
 
 \bibliographystyle{alpha}
 \bibliography{kivi}
