@@ -1273,7 +1273,7 @@ getPatternVarNames (PConstr tag arity patterns) = foldl collectVars [] patterns
         collectVars vars pattern = vars ++ getPatternVarNames pattern
 \end{lstlisting}
 
-The implementation of conformality transformation has been implemented as
+The implementation of conformality transformation can be found in
 \texttt{conformalityTransform} in \textit{LetTransformer.hs}.
 
 \subsection{Transforming irrefutable \texttt{let}s into Simple \texttt{let}s}
@@ -1757,7 +1757,65 @@ collect supercombinators from:
 
 
 \section{Lazy Lambda Lifting}
+
 \section{Type Checker}
+\textit{Type checking} is a process verifying and demanding certain conditions
+to hold in regard to types of objects in a computer program. One way to
+categorize programming languages is by the time when type checking is
+performed. There are two major notions of how this is implemented in modern
+programming languages. The process of checking and enforcing constraings on
+types can take place either at compile-time, which is often called a
+\textit{static typing} or during run-time, which is known as \textit{dynamic
+typing}.
+
+\subsection{Static and Dynamic Typing}
+Static typing allows to catch many type errors early in the development cycle.
+This, at least in theory, should improve the robustness of the final program.
+Nevertheless that static type checker can only utilize information that are
+present during compile-time, it can prove that checked conditions will hold for
+every possible execution path of a progrem. This successfully eliminates the
+need to perform type checking for every execution of a program, as will be the
+case in dynamically typed languages. It might result in faster execution times
+and more optimal memory usage.
+
+On the other hand, languages that are dynamically typed, are those in which
+type checking is performed during run-time instead of compile-time. Internally,
+type information is gathered in form of tags that are then associated with
+objects and contain, among other data, information about types. Variables in
+dynamically typed languages can refer to data of any type, so variables does
+not have a type, whereas data does. Dynamic languages does not enforce as high
+level of conservativeness as static ones, which may result in run-time errors.
+However the lack of compile-time checks may result in faster compilation times
+and easier adoption of dynamic programming language features thans to data
+available at runtime. This data might also make it possible to perform more
+advanced type checks which might result in certain optimizations which would
+otherwise be impossible.
+
+\subsection{Polymorphism}
+Polymorphism, in regard to programming languages, relates to the ability of a
+computer program to contain many types or to act on many types. The common way
+to achieve it is to allow different instances of certain structures to perform
+operations on different types of data. This way it will allow the same code to
+be executed on different kinds of objects, thus allowing a programmer to
+effectively reuse code. There are few different kinds of polymorphism, but the
+one that I'll be particularly interested in is called \textit{parametric
+polymorphism} \cite{Car88}.
+
+Parametric polymorphism is a language feature that allows one piece of code to
+act in the same way on chunks of data that may not necessarily have the
+identical type. In this context word \textit{parametric}, refers to types of
+objects, which may be seen as parameters of some block of code. There is a
+distinction between two kinds of parametric polymorphism:
+
+\begin{itemize}
+  \item \textit{explicit parametric polymorphism} is one in which types of
+    variables and function arguments are given explicitly in the code by the
+    programmer.
+  \item \textit{implicit parametric polymorphism} on the other hand, occurs
+    when type declarations are not present directly in source and types can
+    contain type variables, which are holes to be later filled with certain
+    types.
+\end{itemize}
 
 
 \chapter{The G-machine}
