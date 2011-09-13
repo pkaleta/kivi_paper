@@ -62,42 +62,36 @@
 \date{\today}
 
 \maketitle
-\pagenumbering{roman}
 
 \newpage
 \thispagestyle{empty}
 \mbox{}
 
+\onehalfspace
+
 \Huge
 \begin{abstract}
   \normalsize
   \center
-  This paper describes the design and Haskell implementation of a lazy
-  programming language called Kivi. It is higly influenced on both Haskell's
-  syntax as well as the way that computations are performed. However it generates
-  the \textit{Low Level Virtual Machine}\cite{website:llvm} Intermediate
-  Representation code as the output, which is then assembled and compiled to
-  native code by LLVM.
-\end{abstract}
-
-
-\renewcommand{\abstractname}{Acknowledgements}
-\begin{abstract}
-  \normalsize
-  \center
-
-  TODO: napisac
-
-  \begin{flushright}
-    Piotr Kaleta
-  \end{flushright}
+  This paper describes the design and implementation of a new lazy programming
+  language called Kivi. It is based on the concept of \textit{G-machine}, an
+  efficient implementation of graph reducer. Kivi's syntax resembles the one of
+  Haskell, but beneath syntactic layer, it differs significantly. The code that
+  Kivi generates, is the intermediate language of a compiler toolkit called
+  \textit{Low Level Virtual Machine}\cite{website:llvm} or \textit{LLVM} for
+  short.  Later LLVM compiles and assembles the program into an executable.
+  Programs written in Kivi are therefore likely to gain run-time speed-ups due
+  to highly developed optimization mechanisms implemented in LLVM. Choosing
+  LLVM as a backend makes it easier to port programs to different architectures
+  as well.  Kivi is meant to form the basis of a future implementation of a
+  lazy language for concurrent programming, integrated with Erlang by means of
+  its distribution protocols.
 \end{abstract}
 
 \normalsize
 
+\pagenumbering{roman}
 \tableofcontents
-
-\onehalfspace
 
 \pagenumbering{arabic}
 \chapter{Introduction}
@@ -1991,7 +1985,7 @@ implementations of the G-machine:
     was created in Haskell, and described in Section~\ref{sec:interpreter}
   \item Another one generates the intermediate code for Low Level Virtual
     Machine, which later is compiled to machine code by LLVM compilers. Its
-    description is the content of the Section~\ref{sec:llvm_codegen}.
+    description is the content of Section~\ref{sec:llvm_codegen}.
 \end{itemize}
 
 \section{Graph reduction}
