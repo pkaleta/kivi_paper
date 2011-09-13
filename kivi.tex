@@ -16,7 +16,7 @@
   basicstyle=\small\sffamily,           % the size of the fonts that are used for the code
 %  frame=lines,
   numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
-  stepnumber=2,                   % the step between two line-numbers. If it's 1, each line 
+  stepnumber=2,                   % the step between two line-numbers. If it is 1, each line 
   % will be numbered
   numbersep=5pt,                  % how far the line-numbers are from the code
   showspaces=false,               % show spaces adding particular underscores
@@ -136,9 +136,9 @@ traverse it. \textit{Abstract Syntax Trees}\cite{wiki:ast} has been widely adopt
 standard form of keeping the representation of source code in memory. The
 process of reading the input source file and producing AST from it is called
 \textit{parsing}.
-I've chosen to implement a simple parser, in a similar manner as in
+I have chosen to implement a simple parser, in a similar manner as in
 \cite{JonLes00} as it seemed as the simplest approach to me then. Now, as
-the parser has grown, I'd strongly consider rewriting it to use parser combinator
+the parser has grown, I would strongly consider rewriting it to use parser combinator
 library such as \cite{website:parsec} instead.  The parsing consists of two
 passes. As previously mentioned such separation makes implementation and
 reading the code easier. Thus parsing consist of:
@@ -194,7 +194,7 @@ lex' (c : cs) lnum | isDigit c =
 
 \section{Syntax analysis}
 \label{sec:syntax_analysis}
-Once we can accept tokens from lexer it's time to build a hierarchical
+Once we can accept tokens from lexer it is time to build a hierarchical
 structure called \textit{Abstract Syntax Tree} (or AST for short) from it. ASTs
 are tree representations of abstract syntactic structures written in
 programming language. Nodes in such tree represent different constructs from
@@ -270,9 +270,9 @@ TODO: co tu mialo byc?
 
 \chapter{Translation to Lambda Calculus}
 
-In this chapter I'm going to present the process of transformation of a
+In this chapter I am going to present the process of transformation of a
 high-level functional language into a simple intermediate form - \textit{lambda
-calculus}. In the first part I'll show \textit{Kivi}'s syntax, its
+calculus}. In the first part I will show \textit{Kivi}'s syntax, its
 constructs and structures. Later on the desired output form -
 \textit{Lambda Calculus} will be shown. The rest of the chapter will
 consist of ways to translate the first form into another.
@@ -280,9 +280,9 @@ consist of ways to translate the first form into another.
 \section{Syntax}
 Source of \textit{Kivi}'s program consist of set of
 \textit{supercombinators}\cite{wiki:supercombinator}. Supercombinator is an
-expression consisting of either constants or other supercombinators and doesn't
+expression consisting of either constants or other supercombinators and does not
 contain any free variables (see Definition~\ref{def:free_variable}) in its
-body. Supercombinators might have arguments, and those which doesn't are called
+body. Supercombinators might have arguments, and those which doesn not are called
 \textit{constant applicative forms} (or CAFs for short).
 Listing~\ref{supercombinator_ex} shows the simple supercombinator with one
 argument.
@@ -293,7 +293,7 @@ sqr x = x * x
 \end{lstlisting}
 
 There is one special supercombinator called \textit{main}, that takes no
-arguments. It is the entry point for program execution. If there's no
+arguments. It is the entry point for program execution. If there is no
 \textit{main} CAF present in Kivi's source, both compiler and interpreter
 should issue specific error message.
 
@@ -416,7 +416,7 @@ argument is 0 and then the result is 1, or argument is other than than 0 and
 then we progress recursively. The factorial definition is expressed very
 clearly by means of pattern matching.
 Pattern matching is also very useful when it comes to dealing with data
-types as we'll see in next section.
+types as we will see in next section.
 
 \subsection{Structured Data Types}
 Data types in Kivi are defined using \texttt{data} keyword, giving the name of
@@ -473,7 +473,7 @@ run = showResults
 \end{lstlisting}
 
 We have already discussed parsing in previous chapters, so in the following
-sections I'm going to provide a description of all remaining phases.
+sections I am going to provide a description of all remaining phases.
 
 \section{Structured Data Types and Tagging}
 In order to understand the need for this pass one has to know how structured
@@ -524,7 +524,7 @@ sqrTree (Branch t1 t2) = Branch (sqrTree t1) (sqrTree t2)
 There are few types that are considered built-ins. These are lists, tuples,
 and booleans. The ability to think of these common concepts in functional
 programming as Structured Data Types makes the implementation straightforward
-as I didn't have to treat these entities separately, instead I used a common
+as I did not have to treat these entities separately, instead I used a common
 notion of data types.
 \subsubsection{Booleans}
 Boolean values in Kivi are implemented as a regular Structured Data Type having
@@ -597,7 +597,7 @@ programmer knows in advance how many elements will he need to store.
 There is a predefined number of tuple types that you can create, and currently
 the bound is set to 4. This means that programmer is not allowed to create
 tuples that contain more than 4 elements. This design decision is due to the
-fact that from my perspective it's better to use custom structured data type
+fact that from my perspective it is better to use custom structured data type
 for readability reasons. The limit of 4 however, is an experimental value and
 might be changed.
 
@@ -635,7 +635,7 @@ type DataType = (Name, [Constructor])
 type Constructor = (Name, Int, Int)
 \end{lstlisting}
 
-Because of the fact that there's no way to know in advance how many data type
+Because of the fact that there is no way to know in advance how many data type
 declarations are there in source file I had to devise some way to assign a
 unique tag for each of constructors that is not a built-in one. This is
 precisely what the tagging phase is for. It works in two parts:
@@ -671,7 +671,7 @@ length (Cons x xs) = length xs + 1
 Listing~\ref{lst:length} reminds the already well known function for
 calculating the length of a list, and also presents the version of the same
 function but without \textit{syntactic sugar}. For the purpose of further
-discussion lets assume that we're calculating the length of 3-element list:
+discussion lets assume that we are calculating the length of 3-element list:
 
 \vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
@@ -692,7 +692,7 @@ second branch. This time it succeeds and \texttt{x} is bound to \texttt{1} and
 \texttt{xs} is bound to \texttt{[2, 3]}. The left-hand-sides of function
 equations are called \textit{patterns}. They can consist of constructors,
 variables, numbers, single characters and strings\footnote{Both the built-in
-ones as well as those defined by programmer.}. In previous example we've seen
+ones as well as those defined by programmer.}. In previous example we have seen
 the combination of those, i.e. The pattern was composed of constructors and
 variables. Nothing prevents programmer from creating the so called
 \textit{nested patterns}. Example of such situation is present in
@@ -717,7 +717,7 @@ gcd a 0 = a;
 gcd a b = gcd b (b % a)
 \end{lstlisting}
 
-Here if we've changed the order of equations, the function will never terminate
+Here if we have changed the order of equations, the function will never terminate
 because the first clause would always match. This kind of patterns are called
 \textit{overlapping patterns}.
 
@@ -752,7 +752,7 @@ in
 
 \subsection{Compiling Pattern Matching}
 The simplest way to think of pattern matching is to match expression with first
-pattern and in case it doesn't match, try the following patterns. Within each
+pattern and in case it does not match, try the following patterns. Within each
 equation patterns are tested from left to right\footnote{In case of functions
 with multiple patterns}. Lets consider an example of \texttt{map} function from
 Listing~\ref{lst:map}.
@@ -824,7 +824,7 @@ pattern, so regular lambda abstractions form a subset of pattern-matching ones.}
 \subsection{Free variables}
 \label{sec:free_variable}
 
-For the purpose of further deliberations I'll present the definition of
+For the purpose of further deliberations I will present the definition of
 \textit{free variables}:
 \begin{definition}
   \label{def:free_variable}
@@ -915,7 +915,7 @@ f = $\lambda v_{1}$.$\lambda v_{2}$ $\ldots$ $\lambda v_{n}$.(($\lambda p_{1,1}'
                  Error
 \end{lstlisting}
 
-We've arrived to the point where the pattern matching algorithm starts its
+We have arrived to the point where the pattern matching algorithm starts its
 work. The goal is to translate this form into one that uses \texttt{case}
 expressions. The code responsible for this task has been placed in
 \textit{PatternMatching.hs} module and will be used as a reference. The heart
@@ -1062,7 +1062,7 @@ argument variables are added to each group \texttt{vs} variable according to
 the arity of a constructor. This logic has been implemented in
 \texttt{matchConstr} function. Again a simple example will clarify this step.
 
-After applying variable rule we've reached the state presented in
+After applying variable rule we have reached the state presented in
 Listing~\ref{lst:variable_rule}. Here there are two constructors for two
 equations: \texttt{Nil} and \texttt{Cons} so constructor rule applies:
 
@@ -1088,7 +1088,7 @@ is an example of function that causes such situation to occur:
 length (x : xs) = 1 + length xs;
 length empty = 0
 \end{lstlisting}
-After transforming this function we'll get:
+After transforming this function we will get:
 
 \vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:mixture_length, mathescape=true,
@@ -1102,7 +1102,7 @@ equations into subsets in a way that each partition contains only elements of
 the same type, i.e. In each partition there are only elements that are either
 constructors or variables or numbers, etc. This logic is implemented by
 \texttt{partition} function in \textit{Utils.hs} module. Once the partitioning
-is done it's easy to work out other details. The \texttt{matchEquations} call
+is done it is easy to work out other details. The \texttt{matchEquations} call
 from Listing~\ref{lst:mixture_length} is equivalent to following one:
 
 \vspace*{0.2in}
@@ -1179,7 +1179,7 @@ transformed into irrefutable \texttt{letrec}s and finally into simple
 \subsection{Refutable and irrefutable patterns.}
 \label{sec:irrefutable_patterns}
 We can distinguish two different types of \texttt{let(rec)} bindings:
-\textit{Refutable} and \textit{irrefutable} ones. Let's look at this sample
+\textit{Refutable} and \textit{irrefutable} ones. Lets look at this sample
 \texttt{let} expression:
 
 \vspace*{0.2in}
@@ -1212,7 +1212,7 @@ A \textit{conformality transformation} is an activity to translate the program
 into one that checks for patterns mismatch in \texttt{let(rec)} bindings. It
 will contain only irrefutable \texttt{let(rec)} bindings. We say that such
 program performs a \textit{conformality check}. Lets also mention that such
-transformation is only needed in case of refutable bindings, so there's no need
+transformation is only needed in case of refutable bindings, so there is no need
 to perform this, possibly expensive, computation in when patterns cannot fail.
 So the first step of conformality transformation is partitioning
 \texttt{let(rec)} bindings regarding to their refutability. Once we have all
@@ -1282,7 +1282,7 @@ irrefutable patterns as binders. There are three cases in which we consider a
 pattern irrefutable according to Definition~\ref{def:irrefutable_pattern}. In
 the first two patterns on the left-had side of definition might be either
 variable or simple patterns(numbers, characters, etc.). In such case these
-patterns are already simple, so there's nothing else to do. On the other hand
+patterns are already simple, so there is nothing else to do. On the other hand
 when patterns are irrefutable constructor patterns they are take the following
 form:
 
@@ -1330,7 +1330,7 @@ Nil)))} will yield \texttt{1}, and $Select\mbox{-}2\mbox{-}2$ is going to return
 Transformation from irrefutable \texttt{letrec}s into simple ones is almost
 identical to that concerning \texttt{let}s except from the fact that variables
 from all definitions should be groupped together in order to ensure that
-they're visible from other bindings. Here's the general scheme for such
+they are visible from other bindings. Here is the general scheme for such
 conversion:
 
 \vspace*{0.2in}
@@ -1368,7 +1368,7 @@ After all these transformations took place, all binders in every
 \texttt{PVar v = $expr$} or simple pattern. Now the pattern-matching algorithm,
 described in Section~\ref{sec:pattern_matching_algorithm} can be used because
 it was developed under assumption that left-hand sides of \texttt{let(rec)}
-binders doesn't contain refutable and complex patterns. Therefore it is
+binders does not contain refutable and complex patterns. Therefore it is
 important to run the conformality transform before pattern matching phase.
 
 \section{Transforming \texttt{case} expressions}
@@ -1450,7 +1450,7 @@ A dependency graph is a directed graph, where:
 \begin{itemize}
   \item a set $V$ of vertices is the set of all variables bound by
     \texttt{letrec}
-  \item there's an edge from vertex representing variable a to vertex
+  \item there is an edge from vertex representing variable a to vertex
     representing variable b, if b is present in the right-hand side of
     binding for a. Formally speaking, if b occurs as a free variable
     (Definition~\ref{def:free_variable}) definition of a.
@@ -1484,7 +1484,7 @@ TODO: obrazek z silnymi spojnymi skladowymi
 
 \subsubsection{Topological Sorting}
 After successfully determining the maximal sets of mutually dependant variable
-bindings, it's time to know which of these groups depend on each other. In this
+bindings, it is time to know which of these groups depend on each other. In this
 way bound variables will be in scope when evaluating the value of bindings that
 depend on them. The way to perform this step is to consider each strongly
 connected component as a single vertex, thus forming the graph that is acyclic,
@@ -1537,14 +1537,14 @@ component set.
 This section provides a description of how lambda abstractions are implemented
 in Kivi. Lambda abstractions are more commonly known as \textit{local function}
 or \textit{anonymous function} definitions concepts from imperative languages.
-As previosly I'm going to describe a program transformation, which when
+As previosly I am going to describe a program transformation, which when
 applied, converts the program into a form where lambda abstracions become
 global supercombinators. This transformation is known as \textit{lambda
 lifting} or \textit{closure conversion}. The reader is encouraged to read the
 Chapter 6 in \cite{JonLes00}, as well as Chapter 13 in \cite{Jon87} to
 get additional information on this subject.
 
-For the purpose of our \textit{lambda lifter} described here, I'm going to
+For the purpose of our \textit{lambda lifter} described here, I am going to
 introduce the annotated version of Abstract Syntax Tree, that is capable of
 carrying additional information needed for transformations described in this
 chapter. The type that implements this was called \texttt{AnnExpr} and has
@@ -1586,7 +1586,7 @@ Lambda lifting is a way of eliminate free variables from local function
 definitions. The elimination of free variables allows the compiler to hoist
 lambda abstractions out of their surrounding contexts into a fixed set of
 top-level supercombinators with extra parameter for each free variable. As an
-example of this we'll analyse the following Kivi function that multiplies two
+example of this we will analyse the following Kivi function that multiplies two
 integers without using the multiplication operator (in a rather not the most
 optimal fashion)
 
@@ -1626,7 +1626,7 @@ lambdaLift :: CoreProgram -> CoreProgram
 lambdaLift (adts, scs) = (adts, collectScs . rename . abstract . freeVars $ scs)
 \end{lstlisting}
 
-I'm going to describe and provide details of how each of them has been
+I am going to describe and provide details of how each of them has been
 implemented in Kivi. The source file to look for implementation details, is
 \textit{LambdaLifter.hs}.
 
@@ -1658,7 +1658,7 @@ the most complicated one occurs when calculating free vars for
 \texttt{let(rec)} bindings. The code in this case works by calculating the free
 variable set for each of the right-hand sides of bound variables. Then if it is
 the recursive let, the free variable set consist of sum of these sets without
-variables bound in current \texttt{letrec} binding. Otherwise it's simply the
+variables bound in current \texttt{letrec} binding. Otherwise it is simply the
 sum of all free variables in right-hand sides.
 
 \subsection{Abstracting free variables}
@@ -1796,7 +1796,7 @@ to achieve it is to allow different instances of certain structures to perform
 operations on different types of data. This way it will allow the same code to
 be executed on different kinds of objects, thus allowing a programmer to
 effectively reuse code. There are few different kinds of polymorphism, but the
-one that I'll be particularly interested in is called \textit{parametric
+one that I will be particularly interested in is called \textit{parametric
 polymorphism} \cite{Car88}.
 
 Parametric polymorphism is a language feature that allows one piece of code to
@@ -1811,7 +1811,7 @@ distinction between two kinds of parametric polymorphism:
     programmer.
   \item \textit{implicit parametric polymorphism} on the other hand, occurs
     when type declarations are not present directly in source and types can
-    contain type variables, which are 'holes' to be later filled with certain
+    contain type variables, which are \textit{holes} to be later filled with certain
     types.
 \end{itemize}
 
@@ -1939,11 +1939,26 @@ t_r$ with $t_f$. This implies that the type for $t_f$ is indeed a function
 type\footnote{because $\rightarrow$ operator represents function types} whose
 domain is $t_a$ and the codomain is type of result, $t_r$.
 
-\subsubsection{\texttt{Let} bindings}
+\subsubsection{\texttt{Let(rec)} bindings}
 In order to type-check \texttt{let} expressions, first type-checking of
 bindings introduced by \texttt{let} takes place, obtaining an updated
 environment, \texttt{typeInstanceEnv}. Body of \texttt{let} will by checked
-using this fresh environment.
+using this fresh environment. The situation changes a bit in case of recursive
+\texttt{let} expressions. Before analysing each definition it is necessary to
+first assign a new type variable to each bound variable, creating an updated
+environment. Once the new environment is available, types are checked for each
+definition body as well as the body of a whole \texttt{letrec} in the end.
+
+\subsubsection{Lambda abstractions}
+There is no need to typecheck anonymous functions, as the lambda lifter
+translated them to a top-level supercombinators.
+
+\subsubsection{Identifiers and Constants}
+In case of identifiers a \textit{fresh type} needs to be retrieved. Non-generic
+type variables are shared between fresh and old type, whereas generic ones are
+copied. Type-checking constants are straight-forward because an algorihtm
+immediately knows its type. Therefore, for ints the \texttt{int} type operator
+is returned, for booleans the \texttt{char}, etc.
 
 \chapter{The G-machine}
 The G-machine is an implementation of virtual machine based on the idea of
@@ -1995,7 +2010,7 @@ not to repeat the same calculations over and over.
 \subsection{The Graph}
 The abstract syntax tree is transformed to a graph due to conversions that take
 place during graph reduction. Such graph is being stored in memory,
-specifically it's kept on the heap. The nodes of the graph are dynamically
+specifically it is kept on the heap. The nodes of the graph are dynamically
 allocated on the heap. They contain a \textit{tag} that uniquely identifies the
 type of a node, as well as additinoal fields like values, in case of number
 nodes, or links (addresses) to other nodes in case of application nodes for
@@ -2028,7 +2043,7 @@ chooses to follow the \textit{innermost evaluation}. In this strategy the
 arguments to a function are evaluated before the function application. In Kivi,
 similarly as in other lazy functional languages the outermost redex is
 evaluated first, thus Kivi adapts the \textit{innermost evaluation strategy}.
-Function arguments are evaluated only in case it's absolutely needed, so
+Function arguments are evaluated only in case it is absolutely needed, so
 function arguments that are not used in the body of function will never be
 evaluated, thus saving computations.
 
@@ -2038,7 +2053,7 @@ according to the specified rules and eventually arriving to the state where it
 cannot be reduced any more. Such state is called \textit{weak head normal form}
 (or WHNF for short). We assume that an expression is in the WHNF in several
 cases. First of all, when it is a number, character, or any other simple data
-type it's considered to be in WHNF. Another situation where there is nothing
+type it is considered to be in WHNF. Another situation where there is nothing
 more to reduce is if the expression is in ($f$ $e_1$ $e_2$ $\ldots$ $e_n$)
 form, where $f$ is lambda abstraction, built-in function or constructor and $n$
 is less or equal the expected number of arguments for $f$.
@@ -2047,14 +2062,14 @@ The process of evaluation can be described in four points:
 
 \begin{itemize}
   \item Finding the next reducible redex
-  \item If there's no redex which can be evaluated, then stop
+  \item If there is no redex which can be evaluated, then stop
   \item Otherwise reduce the redex
   \item Update the root of the redex, to save the result of computations
 \end{itemize}
 
 \subsection{Finding next redex}
 The first step is to find the node of a graph where to perform the next
-reduction. As already mentioned, among all such nodes we'll be looking for the
+reduction. As already mentioned, among all such nodes we will be looking for the
 outermost one. The most straight-forward way to find it, is to follow the left
 branches of application nodes (as shown in Figure~\ref{fig:application_node})
 saving the traversed node addresses on the runtime stack. There are two cases
@@ -2074,7 +2089,7 @@ on the stack is greater or equal to the expected number the process continues.
 The arguments to a supercombinator consist of a set of right children of
 application nodes that we have visited during traversal\footnote{At this step,
 the \textit{rearrangement} of arguments takes place. This activity will be
-described in next chapters, but it's just an optimization so I'm not going to
+described in next chapters, but it is just an optimization so I am not going to
 introduce it right now, not to make unnecessary complications.}. The addresses
 that form the stack, are called \textit{spine} of the expression, and the
 process of following the left branches of application nodes is commonly known
@@ -2455,7 +2470,7 @@ Intermediate representation of LLVM provides an independent instruction set and
 type system. It aims to be a low-level and general enough, to make it an easy
 mapping for many high-level languages. The existence of type information,
 usually absent in low-level representations, makes it possible to perform a
-range of optimizations which otherwise won't be possible. Each instruction is
+range of optimizations which otherwise will not be possible. Each instruction is
 in \textit{single static assignment} form, which means that every variable can
 be assigned only once and is not allowed to be modified later. Full description
 of LLVM IR instructions can be found at \url{http://llvm.org/docs/LangRef.html}.
@@ -2482,7 +2497,7 @@ the top of the stack:
 
 The drawback of current implementation is that size of the stack has to be
 declared statically, thus not allowing the stack to grow arbitrarily up to
-memory size. In future, however I'm planning to reimplement it to allow dynamic
+memory size. In future, however I am planning to reimplement it to allow dynamic
 memory allocation, similarly as vectors in C++ STL. Stack operations are
 defined as functions in the same file. Thus \texttt{push} and \texttt{pop}
 stack functions are defined as follows:
@@ -2514,7 +2529,7 @@ helper functions implemented in the same file.
 
 \subsubsection{Heap implementation}
 G-machine's heap is represented by a memory area in the machine's heap. LLVM
-doesn't provide instructions to manage memory on the heap. Instead one has to
+does not provide instructions to manage memory on the heap. Instead one has to
 use \textit{libc} calls to achieve this functionality. Each heap node consist
 of a \textit{tag} and \textit{data}. The role of a tag is to differentiate
 between different types of nodes. For example \texttt{Unwind} G-machine
@@ -2572,8 +2587,8 @@ define i64* @hAllocNum(i64 %n) {
 
 \subsection{Code Generation}
 Until now I have discussed the building blocks of LLVM code generator, yet
-haven't said anything about how translation from G-code instructions to LLVM IR
-really works. In this chapter I'm going to fix that.
+have not said anything about how translation from G-code instructions to LLVM IR
+really works. In this chapter I am going to fix that.
 
 LLVM code generator is implemented in \textit{CodeGen.hs} file. First, function
 \texttt{genLLVMIR} generates the intermediate representation which is later
@@ -2585,7 +2600,7 @@ parameters.
 
 Code generator is called for each supercombinator and fetches its instructions.
 After that \texttt{translateToLLVM} folds over these instructions and pattern
-match on instruction type. For each of them there's a separate routine that
+match on instruction type. For each of them there is a separate routine that
 seeks for the corresponding template and instantiate it with parameters
 substituted for G-code instruction arguments. Such filled supercombinator
 templates are gathered and injected into the program's global template which is
@@ -2632,7 +2647,7 @@ problem is to find the correct moment for GC to run.
 
 \subsection{Mark and Sweep GC}
 Current approach that has been taken in Kivi's garbage collection is to
-implement a simple \textit{mark and sweep} algorithm. It's sources are
+implement a simple \textit{mark and sweep} algorithm. It is sources are
 available in the \textit{Gc.hs} file. In this kind of garbage collection
 strategy, each node on the heap, has an associated value that says, whether or
 not, the current node is used. This is the role of \texttt{NMarked} node
