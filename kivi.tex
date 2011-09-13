@@ -102,25 +102,37 @@ language compiler. The implementation is based on the
 perform evaluation.
 
 The compilation process is implemented as a set of passes that eventually
-transforms the source code into simple intermediate language \textit{lambda
-calculus} enriched with let(rec) expressions. It would be possible to implement
-compiler using fewer passes than I did, or maybe even one, but such clear
-separation made things simpler to both develop and debug as well. Besides, such
-separation made the compiler very modular and inserting additional passes
-could be done with minimal complexity.
+transforms source code written in Kivi into a simple intermediate language
+,\textit{lambda calculus} enriched with let(rec) expressions. Choice to
+implement it by several passes was mainly motivated by readability concerns, as
+well as the will to make implementation and debugging as easy as possible.
+Another reason for this might be the fact that such separation made the
+compiler very modular and adding another pass should be done with minimal
+complexity.
 
+First chapter presents the parsing mechanisms used in Kivi. It is a description
+of lexical and syntax analysers that translate code written in Kivi into an
+abstract construct, which is used throughout the whole futher compilation
+process.
 
-In following chapters I am going to describe the process of translating
-\textit{Lambda Calculus} into \textit{G-code} instructions.  Finally these
-instructions will either be evaluated by the interpreter or compiled down to
-LLVM intermediate representation and further to native code by LLVM
-infrastructure compilers. Design and implementation of both of these concepts
-will be described in separate chapters.
+Next chapter provides a description of translation processes that eventually
+transform source code into \textit{enriched lambda calculus}, a variant of
+lambda calculus with several differences like added let(rec) expressions and
+supercombinators. Later, enriched lambda calculus is going to be converted
+into \textit{G-code}, a sequence of instructions that can be executed on
+G-machine.
+
+Third chapter shows an implementation type-checker, which is used to ensure
+that certain kind of type errors cannot occur during run-time of a Kivi
+program. It also performs a \textit{type inference}, that deduces the types
+that has previously been omitted in Kivi's source.
+
+The last part of this thesis forms a description of G-machine. It presents the
+general execution model, as well as gives two implementations. The first one is
+an interpreter, whereas the second one is a LLVM intermediate representation
+code generator.
 
 TODO: Opis po kolei czesci dokumentu
-
-\section{Implementation language - Haskell}
-
 
 \chapter{Parsing}
 
