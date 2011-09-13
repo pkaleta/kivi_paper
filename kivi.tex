@@ -597,7 +597,7 @@ programmer knows in advance how many elements will he need to store.
 There is a predefined number of tuple types that you can create, and currently
 the bound is set to 4. This means that programmer is not allowed to create
 tuples that contain more than 4 elements. This design decision is due to the
-fact that from my perspective it's better to use custom Structured Data Type
+fact that from my perspective it's better to use custom structured data type
 for readability reasons. The limit of 4 however, is an experimental value and
 might be changed.
 
@@ -1847,7 +1847,7 @@ ommitted in order to reduce verbosity.}:
 head (x : xs) = x
 \end{lstlisting}
 
-First step is to assign fresh type variables to every function parameter as
+First step is to assign fresh type variable to every function parameter as
 well as its return type. This serves as initial set of constraints:
 
 \vspace*{0.2in}
@@ -1877,7 +1877,73 @@ more insight of how real algorithm works, I encourage to read the rest of this
 chapter which dives into the implementation details.
 
 \subsection{Implementation}
+Implementation of Hindley-Milner type checking algorithm can be found in
+\textit{TypeChecker.hs} module. One of the first things that is defined in this
+file is the data type to represent types itself. Types can be either type
+variables or type operators. Type variables are created using \texttt{TypeVar}
+constructor and consist of name as well as an instance which could be either be
+null, or represent another type variable (creating a recursive chain) or a type
+operator. \texttt{TypeOp} creates type operators. A type operator might
+be either simple, such as \texttt{int} or \texttt{bool} or complex. As en
+example of complex type operator consider the $\rightarrow$, presented
+above, standing for function types. Complex type operators take other types as
+arguments.
 
+\vspace*{0.2in}
+\begin{lstlisting}
+data TypeExpr = TypeVar TypeVarName (Maybe TypeExpr)
+              | TypeOp String [TypeExpr]
+\end{lstlisting}
+
+Type checking process can be summarized as matching type operators and
+instantiating type variables. Occurences of the same variables depend on each
+other. That means that whenever type variable $\alpha$ is instantiated to some
+type, every other occurence of $\alpha$ must be instantiated to the same type
+too. This process is known as \textit{unification}. During algorithm execution
+information about instances is present in the \texttt{typeInstanceEnv}
+component of a \texttt{State}. \texttt{State} contains also a \texttt{typeEnv}.
+It is a simple mapping between names of variables and types representing these
+variables. The last piece of state is a set of \textit{non-generic} type
+variables:
+
+\begin{definition}
+  A type variable v occuring in the body of expression e is generic within this
+  expression, if and only if it does not occur in the type of the binder of any
+  lambda abstraction enclosing e.
+\end{definition}
+
+The above definition means that different occurrences of a generic type
+variable in a type expression may be instantiated to different types. It can be
+implemented by simply performing a deep-copy of the type variables and making
+the non-generic ones shared between instances. In order to determine whether
+the variable is generic during run-time of an algorithm, we can just check if
+\texttt{nonGeneric} set contains it.
+
+\subsubsection{Supercombinators}
+Type checking is performed for each supercombinator. First each variable
+introduced in supercombinator arguments is assigned a new and unique type
+variable. The actual type of this variable is to be deremined later by its
+occurences in supercombinator body. The mapping between argument name and its
+type variable is saved in \texttt{typeInstanceEnv} variable. In order to do
+this the body of a supercombinator is type-checked and returned type is
+considered to be the type of supercombinator. This logic is implemented by
+\texttt{typeCheckSc} function.
+
+\subsubsection{Applications}
+When \texttt{typeCheckExpr} enounters an application type of expression, the
+type-checking is performed for both function and argument part of application.
+New type variable is created for function result type. Assume that type
+inferred for function argument is $t_a$, for function is $t_f$ and for result
+$t_r$, then the algorithm has to unify type $t_a \rightarrow
+t_r$ with $t_f$. This implies that the type for $t_f$ is indeed a function
+type\footnote{because $\rightarrow$ operator represents function types} whose
+domain is $t_a$ and the codomain is type of result, $t_r$.
+
+\subsubsection{\texttt{Let} bindings}
+In order to type-check \texttt{let} expressions, first type-checking of
+bindings introduced by \texttt{let} takes place, obtaining an updated
+environment, \texttt{typeInstanceEnv}. Body of \texttt{let} will by checked
+using this fresh environment.
 
 \chapter{The G-machine}
 The G-machine is an implementation of virtual machine based on the idea of
