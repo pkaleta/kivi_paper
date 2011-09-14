@@ -7,8 +7,12 @@
 \usepackage{url}
 \usepackage{amsthm}
 \usepackage{setspace}
+\usepackage{graphicx}
 \newtheorem{definition}{Definition}[chapter]
 %\usepackage{courier}
+
+\DeclareGraphicsExtensions{.pdf}
+\graphicspath{{./diagrams/}}
 
 \begin{document}
 
@@ -110,12 +114,12 @@ Another reason for this might be the fact that such separation made the
 compiler very modular and adding another pass should be done with minimal
 complexity.
 
-First chapter presents the parsing mechanisms used in Kivi. It is a description
+Following chapter presents the parsing mechanisms used in Kivi. It is a description
 of lexical and syntax analysers that translate code written in Kivi into an
 abstract construct, which is used throughout the whole futher compilation
 process.
 
-Next chapter provides a description of translation processes that eventually
+Another chapter provides a description of translation processes that eventually
 transform source code into \textit{enriched lambda calculus}, a variant of
 lambda calculus with several differences like added let(rec) expressions and
 supercombinators. Later, enriched lambda calculus is going to be converted
@@ -132,22 +136,21 @@ general execution model, as well as gives two implementations. The first one is
 an interpreter, whereas the second one is a LLVM intermediate representation
 code generator.
 
-TODO: Opis po kolei czesci dokumentu
-
 \chapter{Parsing}
 
 In order to translate the source of \textit{Kivi} into \textit{Lambda Calculus}
-it has to be available in a structured form so thate later passes could easily
-traverse it. \textit{Abstract Syntax Trees}\cite{wiki:ast} has been widely adopted as a
-standard form of keeping the representation of source code in memory. The
-process of reading the input source file and producing AST from it is called
-\textit{parsing}.
+it has to be available in a structured form so thate next passes could easily
+traverse it. \textit{Abstract Syntax Trees}\cite{wiki:ast} has been widely
+adopted as a standard form of keeping the representation of source code in
+memory. The process of reading the input source file and producing AST from it
+is called \textit{parsing}.
+
 I have chosen to implement a simple parser, in a similar manner as in
-\cite{JonLes00} as it seemed as the simplest approach to me then. Now, as
-the parser has grown, I would strongly consider rewriting it to use parser combinator
-library such as \cite{website:parsec} instead.  The parsing consists of two
-passes. As previously mentioned such separation makes implementation and
-reading the code easier. Thus parsing consist of:
+\cite{JonLes00} as it seemed to be the simplest approach to me back then. Now, as
+the parser has grown, I would strongly consider rewriting it to use parser
+combinator library such as \cite{website:parsec} instead.
+
+Parsing consists of two passes:
 
 \begin{itemize}
   \item Firstly \textit{lexical analysis} implemented by \texttt{lex} in
@@ -159,19 +162,23 @@ reading the code easier. Thus parsing consist of:
     tokens and building an \textit{Abstract Syntax Tree} from it.
 \end{itemize}
 
-
-TODO: Diagram of how parsing process work
-
-TODO: Grammar of the language
-
-This two-phase process is implemented as\footnote{Where \texttt{PatProgram}
-is program containing patterns}:
+This process is implemented as\footnote{Where \texttt{PatProgram} is a program
+that contains patterns}:
 
 \vspace*{0.2in}
 \begin{lstlisting}
 parse :: String -> PatProgram
 parse = syntax . lex
 \end{lstlisting}
+
+And can be seen as presented in Figure~\ref{fig:parser}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[height=9cm]{parser}
+  \caption{Parser schema.}
+  \label{fig:parser}
+\end{figure}
 
 \section{Lexical analysis}
 
@@ -184,9 +191,9 @@ type TokenInfo = (Int, Token)
 \end{lstlisting}
 Where \texttt{TokenInfo} consist of line number and a token string itself.
 
-The heart of \textit{lexical analyser} is the \texttt{lex'} function. It works
-by classifying the parts of remaining input based on first characters.
-Building number tokens may be a nice example of how it works:
+The heart of lexical analyser is the \texttt{lex'} function. It works by
+classifying the parts of remaining input based on first characters.  Building
+number tokens may be a nice example of how it works:
 
 \vspace*{0.2in}
 \begin{lstlisting}[label=lst:lex_comment,caption={Building tokens from numbers.}]
@@ -200,19 +207,20 @@ lex' (c : cs) lnum | isDigit c =
 
 \section{Syntax analysis}
 \label{sec:syntax_analysis}
-Once we can accept tokens from lexer it is time to build a hierarchical
-structure called \textit{Abstract Syntax Tree} (or AST for short) from it. ASTs
-are tree representations of abstract syntactic structures written in
-programming language. Nodes in such tree represent different constructs from
-the source code. The word abstract is used because not every detail from source
-code has its counterpart in the AST, some unnecessary details are ommited.
+Once lexer is capable of emitting tokens, it is time to convert it into a
+hierarchical structure called \textit{Abstract Syntax Tree} (or \textit{AST}
+for short). Abstract syntax trees are tree representations of abstract
+syntactic structures written in programming language. Nodes in such tree
+represent different constructs from the source code. The word abstract is used
+because not every detail from source code has its corresponding piece in AST,
+some unnecessary details are ommited.
 
-Data type for representing Kivi's Abstract Syntax Trees is defined in
-\textit{Common.hs} module and it is a parametrized data type. This concept is
-a similar idea to templates in C++ or generics in Java. It allows the code to
-be reused and forms the basic idea of \textit{parametric poylmorphism}
-(see \cite{website:parametric_polymorphism}). The data type definition is
-following:
+Data type for representing Kivi's abstract syntax trees is defined in
+\textit{Common.hs} module and is a parametrized data type. This concept is
+similar to templates in C++ or generics in Java. It allows the code to be
+reused and is an important ingredient in \textit{parametric poylmorphism}, the
+way that Haskell achieves polymorphism (see
+\cite{website:parametric_polymorphism}). The data type definition is following:
 
 \vspace*{0.2in}
 \begin{lstlisting}
@@ -231,11 +239,11 @@ data Expr a = EVar Name
             | ESelect Int Int Name
 \end{lstlisting}
 The \texttt{Expr} data type is parametrized with respect to its binders.
-Binders, as name suggests, are used when the variable is being bound to a
-value. This happens in lambda abstractions, \texttt{let} and \texttt{letrec}
-definitions as well as in \texttt{case} expressions. To give an e example of
-how a simple source code construct will look, when parsed to AST,  lets look at
-the following example:
+Binders, as name suggests, are used when the variable is bound to a value. This
+happens in lambda abstractions, let and letrec definitions as well as in
+case expressions. To give an example of how a simple source code
+construct will look like, when parsed to AST, consider the following
+snippet of code:
 
 \vspace*{0.2in}
 \begin{lstlisting}
@@ -257,56 +265,48 @@ with patterns. However in order to grasp the concept of parametrized
        EAp (EAp (EVar '+') (EVar 'x')) (EVar 'y')
 \end{lstlisting}
 
-Defining expressions in this way greatly reduces the amount of code to be
-written. For example, initially parser returns programs with patterns in them,
-but later phases of compilation process gets rid of them by transforming
-program into a representation that uses \texttt{case} expressions instead.
-Thanks to parametrized definition of \texttt{Expr} data type we could define
-parse as returning \texttt{Expr Pattern}, whereas later phases return
-\texttt{Expr String}.
-
-\section{Implementation of Parser}
-
-TODO: tu mozna napisac jak dziala parser o ile za duzo nie wyjdzie reszty
-
-\subsection{Analysing patterns}
-
-TODO: co tu mialo byc?
+Defining expressions in this way makes the code way more concise. For example,
+initially parser returns programs with patterns in them, but later phases of
+compilation process gets rid of them by transforming program into a
+representation that uses \texttt{case} expressions instead. Thanks to
+parametrized definition of \texttt{Expr} data type, it is possible to define
+parse as function that returns \texttt{Expr Pattern}, whereas subsequent phases
+return \texttt{Expr String}.
 
 
 \chapter{Translation to Lambda Calculus}
 
-In this chapter I am going to present the process of transformation of a
-high-level functional language into a simple intermediate form - \textit{lambda
-calculus}. In the first part I will show \textit{Kivi}'s syntax, its
-constructs and structures. Later on the desired output form -
-\textit{Lambda Calculus} will be shown. The rest of the chapter will
-consist of ways to translate the first form into another.
+In this chapter I am going to present the process of transforming a high-level
+functional language into a simple intermediate form called \textit{lambda calculus}.
+In the first part I will show \textit{Kivi}'s syntax, its constructs and
+structures. Later on, the desired output form, \textit{Lambda Calculus} will be
+shown. The rest of the chapter will focus on methods to translate the first form
+into another.
 
 \section{Syntax}
-Source of \textit{Kivi}'s program consist of set of
+Sources of Kivi programs consist of set of
 \textit{supercombinators}\cite{wiki:supercombinator}. Supercombinator is an
-expression consisting of either constants or other supercombinators and does not
-contain any free variables (see Definition~\ref{def:free_variable}) in its
-body. Supercombinators might have arguments, and those which doesn not are called
-\textit{constant applicative forms} (or CAFs for short).
+expression consisting of either constants or other supercombinators and does
+not contain any free variables (see Definition~\ref{def:free_variable}) in its
+body. Supercombinators might have arguments but those which does not, are
+called \textit{constant applicative forms} (or \textit{CAF}s for short).
 Listing~\ref{supercombinator_ex} shows the simple supercombinator with one
-argument.
+argument, calculating square of a given number.
 
 \vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=supercombinator_ex,caption={Simple supercombinator.}]
 sqr x = x * x
 \end{lstlisting}
 
-There is one special supercombinator called \textit{main}, that takes no
-arguments. It is the entry point for program execution. If there is no
-\textit{main} CAF present in Kivi's source, both compiler and interpreter
-should issue specific error message.
+There exists one distinguished supercombinator called \textit{main}, that takes
+no arguments. It is the entry point for program execution. If there is no main
+CAF present in Kivi's source, both compiler and interpreter should issue a
+specific error message.
 
 \subsection{Case expressions}
-The purpose of case expression is to allow the programmer to control the flow
+The purpose of case expressions is to allow the programmer to control the flow
 of program execution via a multiway branch. The semantics of case is rather
-simple. First, the expression under case is evaluated and then based on result,
+simple. First, the expression under case is evaluated and then, based on result,
 the appriopriate execution path is chosen. Example of case expression is
 presented in Listing~\ref{lst:case_ex}.
 
@@ -322,10 +322,20 @@ main = fib 10
 \end{lstlisting}
 
 \subsection{If expressions}
+Reason for if expressions to exist, is to make the life easier for programmers
+coming from imperative languages, for if expressions can be implemented using
+case ones, without changing its semantics, and this is the recommended
+approach.  In fact what Kivi does under the hood is to translate if to case.
+What is different from most imperative languages, is the fact that ifs are
+expressions, not statements, therefore they return a value. If expressions
+takes an expression that should evaluate to boolean value, as well as two
+expressions that are returned if the value under test is true or
+false:
 
-TODO: write
-
-TODO: zmienic \ref{xxx} na \ref{lst:xxx}
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell,label=lst:case_ex,caption={Fibonacci with case}]
+f x = if (x > 100) x (x * x)
+\end{lstlisting}
 
 \subsection{Local bindings}
 Supercombinators provides the ability to define local definitions using
@@ -345,8 +355,8 @@ main =
 \end{lstlisting}
 
 \subsection{Recursive local bindings}
-In order to define mutually recursive bindings using \texttt{let} one has to use the
-special \texttt{letrec} construct as shown in Listing~\ref{factorial_letrec_ex}
+In order to define recursive bindings, one has to use a special \texttt{letrec}
+construct as shown in Listing~\ref{factorial_letrec_ex}
 
 \vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=factorial_letrec_ex,caption={Factorial function using \texttt{letrec}.}]
@@ -445,11 +455,19 @@ In next case the argument is matched to second \texttt{List} constructor, that
 is \texttt{Cons}. If argument matches, the \textit{tail} of the list is bound to
 \texttt{xs} variable and right hand side of that branch is evaluated.
 
-\subsection{Function application and Currying}
+\subsection{Partial function application}
+It is possible to create \textit{partial function applications} also known as
+\textit{currying}. It means that supplying an argument to a function, yields
+another function of smaller arity. Given a function $f : A \times B \rightarrow
+D$ and fixing the first argument creates a function $f : B \rightarrow C$. An
+example is presented below:
 
-TODO: write
-
-\section{Lambda Calculus}
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell,caption={Partial application of addition.}]
+add a b = a + b;
+add3 = add 3;
+main = add3 4
+\end{lstlisting}
 
 \section{Translation to Lambda Calculus}
 The process of translating a high-level functional language to \textit{lambda
@@ -507,10 +525,8 @@ Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))
 
 \begin{figure}[h!]
   \centering
-
-  TODO: przyklad
-
-  \caption{Example of a tree.}
+  \includegraphics[height=4cm]{tree}
+  \caption{Tree built using abstract data types.}
   \label{fig:tree}
 \end{figure}
 
