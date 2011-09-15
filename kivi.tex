@@ -308,10 +308,10 @@ The purpose of case expressions is to allow the programmer to control the flow
 of program execution via a multiway branch. The semantics of case is rather
 simple. First, the expression under case is evaluated and then, based on result,
 the appriopriate execution path is chosen. Example of case expression is
-presented in Listing~\ref{lst:case_ex}.
+presented in Listing~\ref{lst:case_expression}.
 
 \vspace*{0.2in}
-\begin{lstlisting}[style=haskell,label=lst:case_ex,caption={Fibonacci with case}]
+\begin{lstlisting}[style=haskell,label=lst:case_expression,caption={Fibonacci with case}]
 fib n =
     case n of
         0 -> 1;
@@ -333,7 +333,7 @@ expressions that are returned if the value under test is true or
 false:
 
 \vspace*{0.2in}
-\begin{lstlisting}[style=haskell,label=lst:case_ex,caption={Fibonacci with case}]
+\begin{lstlisting}[style=haskell,label=lst:if_expression,caption={Fibonacci with case}]
 f x = if (x > 100) x (x * x)
 \end{lstlisting}
 
@@ -403,7 +403,7 @@ created and then applied to 42 yielding 84 as result.
 During compilation process programs containing lambda abstractions are
 transformed into their equivalents with lambda abstractions substituted for top
 level supercombinators. This process is called \textit{lambda lifting} and is
-described in more detail in chapter~\ref{lambda_lifting}.
+described in more detail in chapter~\ref{sec:lambda_lifting}.
 
 \subsection{Pattern matching}
 
@@ -745,7 +745,7 @@ because the first clause would always match. This kind of patterns are called
 
 Pattern matching can occur not only in function equations but also in source
 code constructs. It can be used in \texttt{case} expressions as well as in
-\texttt{let} and \texttt{letrec} bindings. Examples of those two pattern
+let and letrec bindings. Examples of those two pattern
 matching uses are presented in Listing~\ref{lst:case_pattern_matching} and
 ~\ref{lst:letrec_pattern_matching}.  Making pattern matching available in
 let(rec)s at first sight might look like very similar to other constructs. In
@@ -1163,55 +1163,50 @@ According to the rules above one can transform every pattern-matching lambda
 abstraction to a corresponding (and semantically identical) \texttt{case}
 expression. This follows directly from the description of rules.
 
-\section{Transforming \texttt{let(rec)} expressions}
+\section{Transforming let(rec) expressions}
 \label{sec:letrec_transform}
-The reason why we need to perform \texttt{let(rec)} transformations is due to
-the fact that letrec binders\footnote{Binders of a \texttt{let(rec)}
-expressions are the left-hand sides of each definition} might contain arbitrary
-patterns in them. This prevents us from using the machinery that would be used
-instead, if those binders were allowed to be simple variables only. This
-section is dedicated to show how the transformation from enriched version of
-\texttt{let} and \texttt{letrec} bindings to a simple lambda calculus work in
-Kivi. Code implementing functionalities from this section has been placed in
-\textit{LetTransformer.hs} module.
+The reason why we need to perform let(rec) transformations is due to the fact
+that letrec binders\footnote{Binders of a let(rec) expressions are the
+left-hand sides of each definition} might contain arbitrary patterns in them.
+This prevents us from using the machinery that would be used instead, if those
+binders were allowed to be simple variables only. This section is dedicated to
+show how the transformation from enriched version of let and letrec bindings to
+a simple lambda calculus work in Kivi. Code implementing functionalities from
+this section has been placed in \textit{LetTransformer.hs} module.
 
-The rest of this chapter is devoted to presenting transformations which
+The rest of this chapter is devoted to presentation of transformations which
 translate a program into one, in which only \textit{simple let(rec)}s are
-present. Simple \texttt{let(rec)}s are such, that their binders contain only
-patterns that are either variable patterns or simple patterns(numbers,
-characters, strings, etc.).
+present. Simple let(rec)s are such, that their binders contain only patterns
+that are either variable patterns or simple patterns(numbers, characters,
+strings, etc.).
 
 The first step of this process is to perform a \textit{conformality
 transformation} described in Section~\ref{sec:conformality_transformation}.
-Later, general \texttt{let} expressions, are converted into simple
-\texttt{let}s via irrefutable \texttt{let}s, obtained by previous
-transformation. On the other hand general \texttt{letrec}s are first
-transformed into irrefutable \texttt{letrec}s and finally into simple
-\texttt{letrec}s. This process is shown in Figure~\ref{fig:letrec_transform}:
+Later, general let expressions, are converted into simple lets via irrefutable
+lets, obtained by previous transformation. On the other hand general letrecs
+are first transformed into irrefutable letrecs and finally into simple letrecs.
+This process is shown in Figure~\ref{fig:letrec_transform}:
 
 \begin{figure}[h!]
   \centering
-
-  TODO: diagram pokazujacy w jakiej kolejnosci sa aplikowane transformacje.
-
-  \caption{Transformation of \texttt{let(rec)} expressions.}
+  \includegraphics[height=4cm]{let_transform}
+  \caption{Transformation of let(rec) expressions.}
   \label{fig:letrec_transform}
 \end{figure}
 
 \subsection{Refutable and irrefutable patterns.}
 \label{sec:irrefutable_patterns}
-We can distinguish two different types of \texttt{let(rec)} bindings:
-\textit{Refutable} and \textit{irrefutable} ones. Lets look at this sample
-\texttt{let} expression:
+We can distinguish two different types of let(rec) bindings: \textit{Refutable}
+and \textit{irrefutable} ones. Lets look at this sample let expression:
 
 \vspace*{0.2in}
-\begin{lstlisting}[style=haskell,mathescape=true,label=lst:conformality_check,caption={Pattern matching \texttt{let} binding.}]
+\begin{lstlisting}[style=haskell,mathescape=true,label=lst:conformality_check,caption={Pattern matching let binding.}]
 let (Cons x xs) = $expr$ in ...
 \end{lstlisting}
 The problem arises because \texttt{expr} might be evaluated to \texttt{Nil},
 and in such situation this pattern matching will fail. This is precisely the
 characteristic that distinguishes between the two aforementioned types of
-\texttt{let(rec)} bindings. In short refutable bindings are those which contain
+let(rec) bindings. In short refutable bindings are those which contain
 at least one refutable pattern and thus may fail during evaluation. On the
 other hand irrefutable ones are those in which a failure cannot occur, thus
 when all patterns are irrefutable.
@@ -1231,15 +1226,15 @@ The function \texttt{isRefutable} is implemented in exactly this fashion.
 \subsection{Conformality transformation}
 \label{sec:conformality_transformation}
 A \textit{conformality transformation} is an activity to translate the program
-into one that checks for patterns mismatch in \texttt{let(rec)} bindings. It
-will contain only irrefutable \texttt{let(rec)} bindings. We say that such
+into one that checks for patterns mismatch in let(rec) bindings. It
+will contain only irrefutable let(rec) bindings. We say that such
 program performs a \textit{conformality check}. Lets also mention that such
 transformation is only needed in case of refutable bindings, so there is no need
 to perform this, possibly expensive, computation in when patterns cannot fail.
 So the first step of conformality transformation is partitioning
-\texttt{let(rec)} bindings regarding to their refutability. Once we have all
+let(rec) bindings regarding to their refutability. Once we have all
 patterns that might fail in one place we need to find a way to transform
-\texttt{let(rec)}s into a form that conformality check is done.  Considering
+let(rec)s into a form that conformality check is done.  Considering
 our running example from Listing~\ref{lst:conformality_check} our compiler
 would transform this expression into:
 
@@ -1298,8 +1293,8 @@ getPatternVarNames (PConstr tag arity patterns) = foldl collectVars [] patterns
 The implementation of conformality transformation can be found in
 \texttt{conformalityTransform} in \textit{LetTransformer.hs}.
 
-\subsection{Transforming irrefutable \texttt{let}s into Simple \texttt{let}s}
-As previously mentioned irrefutable \texttt{let} is such that contain only
+\subsection{Transforming irrefutable lets into simple lets}
+As previously mentioned irrefutable let is such that contain only
 irrefutable patterns as binders. There are three cases in which we consider a
 pattern irrefutable according to Definition~\ref{def:irrefutable_pattern}. In
 the first two patterns on the left-had side of definition might be either
@@ -1313,9 +1308,9 @@ form:
   let ($c$ $p_1, p_2 \ldots, p_n$) = $expr$ in $\ldots$
 \end{lstlisting}
 where each $p_1, p_2, \ldots, p_n$ are irrefutable patterns. In order to
-convert such expression into a simple \texttt{let}, we can apply the following
+convert such expression into a simple let, we can apply the following
 transformation\footnote{Without loss of generality we can assume that each
-\texttt{let} contains only one definition. Every program could be easily
+let contains only one definition. Every program could be easily
 transformed to conform to this condition.}:
 
 \vspace*{0.2in}
@@ -1348,9 +1343,9 @@ $Select\mbox{-}2\mbox{-}1$ when applied to \texttt{(Cons 1 (Cons 2 (Cons 3
 Nil)))} will yield \texttt{1}, and $Select\mbox{-}2\mbox{-}2$ is going to return
 \texttt{Cons 2 (Cons 3 Nil)}.
 
-\subsection{Transforming irrefutable \texttt{letrec}s into Simple \texttt{letrec}s}
-Transformation from irrefutable \texttt{letrec}s into simple ones is almost
-identical to that concerning \texttt{let}s except from the fact that variables
+\subsection{Transforming irrefutable letrecs into simple letrecs}
+Transformation from irrefutable letrecs into simple ones is almost
+identical to that concerning lets except from the fact that variables
 from all definitions should be groupped together in order to ensure that
 they are visible from other bindings. Here is the general scheme for such
 conversion:
@@ -1386,64 +1381,61 @@ in $expr$
 
 \subsection{Summary}
 After all these transformations took place, all binders in every
-\texttt{let(rec)} expressions should become variable pattern in form
+let(rec) expressions should become variable pattern in form
 \texttt{PVar v = $expr$} or simple pattern. Now the pattern-matching algorithm,
 described in Section~\ref{sec:pattern_matching_algorithm} can be used because
-it was developed under assumption that left-hand sides of \texttt{let(rec)}
+it was developed under assumption that left-hand sides of let(rec)
 binders does not contain refutable and complex patterns. Therefore it is
 important to run the conformality transform before pattern matching phase.
 
-\section{Transforming \texttt{case} expressions}
+%\section{Transforming case expressions}
 
 \section{Dependency Analysis}
-Dependency analysis is a process of splitting up \texttt{let(rec)} bindings
-into minimial-sized groups and preferring \texttt{let} over \texttt{letrec}
+Dependency analysis is a process of splitting up let(rec) bindings
+into minimial-sized groups and preferring let over letrec
 where possible. The reason for this choice is because the non-recursive version
-of binding can be implemented more efficiently. The fact that \texttt{let(rec)}
+of binding can be implemented more efficiently. The fact that let(rec)
 expressions are not always as optimal as they could, is twofold:
 \begin{itemize}
   \item First, programmer might have ommited the fact that the
-    \texttt{let(rec)} expression he implemented is not recursive at all.
+    let(rec) expression he implemented is not recursive at all.
   \item Previous phases\footnote{as well as passes that are not yet available
-    in Kivi} might be unnecesarily pessimistic, for example \texttt{where}
-    clauses are always transformed into recursive \texttt{let}s for simplicity
+    in Kivi} might be unnecesarily pessimistic, for example where
+    clauses are always transformed into recursive lets for simplicity
     reasons.
 \end{itemize}
 Consider the following Kivi binding as an illustration of that fact:
 
 \vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:letrec_dependency_example,caption={Example of
-  \texttt{letrec} before dependency analysis.}]
+  letrec before dependency analysis.}]
 letrec
-    p       = 3;
-    q       = 7;
+    p       = res + 1;
+    q       = res + 2;
     x       = p + q;
     fac n   = if (n == 0) 1 (n * fac(n-1));
     res     = fac x;
     gcd a b = if (b == 0) a (gcd b (a % b))
 in
-    gcd 24 18
+    gcd res 3
 \end{lstlisting}
 After analysing the dependencies and splitting the letrec into minimal
 subgroups the expression will become:
 
 \vspace*{0.2in}
-\begin{lstlisting}[style=haskell,label=lst:letrec_after_anlysis,caption={\texttt{letrec}
+\begin{lstlisting}[style=haskell,label=lst:letrec_after_anlysis,caption={letrec
   after performing dependency anlysis.}]
-let
-    p = 3
-let
-    q = 7
-let
-    x = 10
-in letrec
+letrec
     fac n = if (n == 0) 1 (n * fac(n-1))
 in letrec
     gcd a b = if (b == 0) a (gcd b (a % b))
-in let
+in letrec
+    p = res + 1
+    q = res + 2
+    x = p + q
     res = fac x
 in
-    gcd 24 18
+    gcd res 3
 \end{lstlisting}
 This section provides an efficient algorithm to perform dependency analysis
 using \textit{strongly connected components}.
@@ -1465,13 +1457,13 @@ A directed graph is a pair G = (V, E) of:
 
 \subsubsection{Constructing Dependency Graph}
 The first step of dependency analysis algorithm is to create a
-\textit{dependency graph} for each each \texttt{letrec} construct. It is
+\textit{dependency graph} for each each letrec construct. It is
 defined as follows:
 \begin{definition}
 A dependency graph is a directed graph, where:
 \begin{itemize}
   \item a set $V$ of vertices is the set of all variables bound by
-    \texttt{letrec}
+    letrec
   \item there is an edge from vertex representing variable a to vertex
     representing variable b, if b is present in the right-hand side of
     binding for a. Formally speaking, if b occurs as a free variable
@@ -1482,14 +1474,21 @@ A dependency graph is a directed graph, where:
 To get a feeling how this applies in practice lets look at the dependency graph
 build for our example from Listing~\ref{lst:letrec_dependency_example}:
 
-TODO: graf dla tego przykladu
+\vspace*{0.2in}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[height=4cm]{dependency_graph}
+  \caption{Dependency graph constructed for letrec binding.}
+  \label{fig:letrec_dependency_graph}
+\end{figure}
 
 \subsubsection{Strongly Connected Components}
-Next in order to group variables that depend on each other into one
-\texttt{letrec} binding, we have to determine which variables are mutually
-recursive. This is done by calculating the \textit{strongly connected
-components} (or \textit{SCC}) of a dependency graph. According to Wikipedia the
-definition of strongly connected components is following:
+Next in order to group variables that depend on each other into one letrec
+binding, we have to determine which variables are mutually recursive. This is
+done by calculating the \textit{strongly connected components} (or
+\textit{SCC}) of a dependency graph. To gain a deep insight into analysis of an
+algorithm, see \cite{Cormen03}. Definition of strongly connected components can
+be found below:
 
 \begin{definition}
 Directed graph is said to be strongly connected if there is a path from each
@@ -1499,25 +1498,31 @@ The strongly connected components of a directed graph G are its maximal
 strongly connected subgraphs.
 \end{definition}
 
-In our running example the set of strongly connected components will look as
-in the next picture:
+Strongly connected components found for dependency graph formed for running
+example is presented in Figure~\ref{fig:topsorted_scc}. There will be three
+coalesced vertices created and they are shown by dotted lines.
 
-TODO: obrazek z silnymi spojnymi skladowymi
+\vspace*{0.2in}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[height=5cm]{scc_graph}
+  \caption{Strongly connected components of a dependency graph.}
+  \label{fig:topsorted_scc}
+\end{figure}
 
 \subsubsection{Topological Sorting}
-After successfully determining the maximal sets of mutually dependant variable
-bindings, it is time to know which of these groups depend on each other. In this
-way bound variables will be in scope when evaluating the value of bindings that
-depend on them. The way to perform this step is to consider each strongly
-connected component as a single vertex, thus forming the graph that is acyclic,
-and then to put these vertices in a \textit{topologically sorted} order. After
-this step the situation in our example will be following:
+After successfully determining the maximal sets of mutually dependent variable
+bindings, it is time to find out which of these groups depend on each other.
+Exploiting this information will make it possible to arrange bindings in letrec
+in a way that all needed variables will be in scope when evaluating the value
+of bindings that depend on them. The way to perform this step is to transform
+the graph further by coalescing each strongly connected component into a single
+vertex.  The resulting graph will be acyclic, so it would become possible to
+sort the coalesced vertices \textit{topologically}. Again the full description
+of \textit{topological sorting} algorithm can be found in \cite{Cormen03}.
 
-TODO: obrazek po sortowaniu topologicznym
-
-
-\subsubsection{Building a new \texttt{letrec}}
-The last step is to create the \texttt{letrec} binding for each strongly
+\subsubsection{Building a new letrec}
+The last step is to create the letrec binding for each strongly
 connected component in topological order. In our example the structure from
 Listing~\ref{lst:letrec_after_anlysis} will be created.
 
@@ -1525,9 +1530,9 @@ Listing~\ref{lst:letrec_after_anlysis} will be created.
 \subsection{Implementation}
 Regarding implementation issues, the heart of the code responsible for
 aforementioned tasks is implemented in \texttt{analyseExpr} function in case
-for \texttt{let(rec)} expressions. First of all, each AST expression is
+for let(rec) expressions. First of all, each AST expression is
 augumented with its free variables. Based on that, function \texttt{getEdges}
-folds over \texttt{letrec} bindings and creates edges of the dependency graph:
+folds over letrec bindings and creates edges of the dependency graph:
 
 \vspace*{0.2in}
 \begin{lstlisting}[style=haskell]
@@ -1552,10 +1557,11 @@ scc ins outs vs = topSortedSccs
 \end{lstlisting}
 
 The rest of the \texttt{analyseExpr} function is meant to split the input
-\texttt{letrec} expression according to the computed strongly connected
+letrec expression according to the computed strongly connected
 component set.
 
 \section{Lambda Lifting}
+\label{sec:lambda_lifting}
 This section provides a description of how lambda abstractions are implemented
 in Kivi. Lambda abstractions are more commonly known as \textit{local function}
 or \textit{anonymous function} definitions concepts from imperative languages.
@@ -1677,16 +1683,16 @@ arguments are:
 
 The cases for simple expressions like \texttt{EVar} or \texttt{ENum} are easy,
 the most complicated one occurs when calculating free vars for
-\texttt{let(rec)} bindings. The code in this case works by calculating the free
+let(rec) bindings. The code in this case works by calculating the free
 variable set for each of the right-hand sides of bound variables. Then if it is
 the recursive let, the free variable set consist of sum of these sets without
-variables bound in current \texttt{letrec} binding. Otherwise it is simply the
+variables bound in current letrec binding. Otherwise it is simply the
 sum of all free variables in right-hand sides.
 
 \subsection{Abstracting free variables}
 After each expression has the set of its free variables assigned, the algorithm
 proceeds by abstracting out the free variables from each lambda abstraction and
-introducting the \texttt{let} binding of the form:
+introducting the let binding of the form:
 
 \vspace*{0.2in}
 \begin{lstlisting}[style=haskell,mathescape=true]
@@ -1724,7 +1730,7 @@ will be transformed into:
 
 \subsection{Renaming supercombinators}
 The next step performs the renaming of variables, effectively giving unique
-name to each of the \texttt{sc} variables introduced by \texttt{let} bindings
+name to each of the \texttt{sc} variables introduced by let bindings
 in previous step. Given that introduced supercombinators have unique names it
 would be possible to hoist them to the level of global supercombinators during
 next phases of algorithm. This is implemented as \texttt{rename} function. It
@@ -1758,14 +1764,14 @@ Finally, in the last step, we can perform the 'lift part' of lambda lifting
 algorithm. In this pass the supercombinators introduced earlier are collected
 and raised to the top level.  Regarding source code, the only complicated bit
 is in the \texttt{collectExpr} function when collecting supercombinators from
-\texttt{let(rec)} expressions.  There are three possibilities where we should
+let(rec) expressions.  There are three possibilities where we should
 collect supercombinators from:
 
 \begin{itemize}
-  \item Firstly, supercombinators might be nested in \texttt{let(rec)}
+  \item Firstly, supercombinators might be nested in let(rec)
     expression. They are gathered by calling \texttt{collectExpr} on that
     expression and are stored in \texttt{exprScs} variable.
-  \item Supercombinators might also be present directly as \texttt{let(rec)}
+  \item Supercombinators might also be present directly as let(rec)
     bindings as $sc$ \texttt{=} $\lambda v_1$ $\ldots$ $v_n$ . $expr$.
     Therefore what Kivi does, is splitting the list of bindings into ones that
     are simple variable bindings and supercombinators.
@@ -1961,15 +1967,15 @@ t_r$ with $t_f$. This implies that the type for $t_f$ is indeed a function
 type\footnote{because $\rightarrow$ operator represents function types} whose
 domain is $t_a$ and the codomain is type of result, $t_r$.
 
-\subsubsection{\texttt{Let(rec)} bindings}
-In order to type-check \texttt{let} expressions, first type-checking of
-bindings introduced by \texttt{let} takes place, obtaining an updated
-environment, \texttt{typeInstanceEnv}. Body of \texttt{let} will by checked
+\subsubsection{Let(rec) bindings}
+In order to type-check let expressions, first type-checking of
+bindings introduced by let takes place, obtaining an updated
+environment, \texttt{typeInstanceEnv}. Body of let will by checked
 using this fresh environment. The situation changes a bit in case of recursive
-\texttt{let} expressions. Before analysing each definition it is necessary to
+let expressions. Before analysing each definition it is necessary to
 first assign a new type variable to each bound variable, creating an updated
 environment. Once the new environment is available, types are checked for each
-definition body as well as the body of a whole \texttt{letrec} in the end.
+definition body as well as the body of a whole letrec in the end.
 
 \subsubsection{Lambda abstractions}
 There is no need to typecheck anonymous functions, as the lambda lifter

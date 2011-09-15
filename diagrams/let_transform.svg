@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="New document 1">
+  <defs
+     id="defs4">
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Mend"
+       style="overflow:visible;">
+      <path
+         id="path3915"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.4) rotate(180) translate(10,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-9"
+       style="overflow:visible">
+      <path
+         inkscape:connector-curvature="0"
+         id="path3915-1"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;marker-start:none"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="269.1931"
+     inkscape:cy="501.92214"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1916"
+     inkscape:window-height="1052"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
+       d="m 442.1061,461.1284 -0.10732,27.68462"
+       id="path3891"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g3811"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#rect2989-3-88"
+       inkscape:connection-end-point="d4" />
+    <g
+       id="g3898">
+      <rect
+         y="488.81302"
+         x="384.02185"
+         height="18.960987"
+         width="115.88035"
+         id="rect2989-3-88"
+         style="fill:#ffffff;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2991-2-9"
+         y="501.60165"
+         x="406.52048"
+         style="font-size:10px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="501.60165"
+           x="406.52048"
+           id="tspan2993-4-0"
+           sodipodi:role="line">Simple letrecs</tspan></text>
+    </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
+       d="m 289.46832,461.1284 0,27.43209"
+       id="path5077"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g3816"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#g3893"
+       inkscape:connection-end-point="d4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
+       d="m 441.45697,393.99526 0,48.17215"
+       id="path5302"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0" />
+    <g
+       id="g3893">
+      <rect
+         y="488.56049"
+         x="231.48885"
+         height="18.960987"
+         width="115.88035"
+         id="rect2989-3-1"
+         style="fill:#ffffff;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2991-2-6"
+         y="501.34912"
+         x="259.98749"
+         style="font-size:10px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="501.34912"
+           x="259.98749"
+           id="tspan2993-4-7"
+           sodipodi:role="line">Simple lets</tspan></text>
+    </g>
+    <g
+       id="g3811"
+       transform="translate(197.14286,-79.285714)">
+      <rect
+         y="521.45312"
+         x="187.05981"
+         height="18.960987"
+         width="115.88035"
+         id="rect2989-3-8"
+         style="fill:#ffffff;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2991-2-2"
+         y="534.24176"
+         x="199.55844"
+         style="font-size:10px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="534.24176"
+           x="199.55844"
+           id="tspan2993-4-1"
+           sodipodi:role="line">Irrefutable letrecs</tspan></text>
+    </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend-9)"
+       d="m 288.14601,396.01557 1.32231,0 0,46.15184"
+       id="path5526"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0"
+       inkscape:connection-end="#g3816"
+       inkscape:connection-end-point="d4" />
+    <g
+       id="g3816"
+       transform="translate(-168.57143,-19.285714)">
+      <rect
+         y="461.45312"
+         x="400.09958"
+         height="18.960987"
+         width="115.88035"
+         id="rect2989-3"
+         style="fill:#ffffff;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2991-2"
+         y="474.24176"
+         x="420.59821"
+         style="font-size:10px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="474.24176"
+           x="420.59821"
+           id="tspan2993-4"
+           sodipodi:role="line">Irrefutable lets</tspan></text>
+    </g>
+    <g
+       id="g5521"
+       transform="translate(0,8)">
+      <rect
+         y="385.42032"
+         x="256.90244"
+         height="18.960987"
+         width="218.37225"
+         id="rect2989"
+         style="fill:#ffffff;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text2991"
+         y="398.20895"
+         x="309.40106"
+         style="font-size:10px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="398.20895"
+           x="309.40106"
+           id="tspan2993"
+           sodipodi:role="line">General let and letrecs</tspan></text>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:10px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="294.95566"
+       y="429.4407"
+       id="text5712"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5714"
+         x="294.95566"
+         y="429.4407">Conformality transformation</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:10px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="159"
+       y="478.93362"
+       id="text5716"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5718"
+         x="159"
+         y="478.93362">Irrefutable to simple lets</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:10px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="448.0639"
+       y="478.26382"
+       id="text5716-2"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5718-8"
+         x="448.0639"
+         y="478.26382">Irrefutable to simple letrecs</tspan></text>
+  </g>
+</svg>
