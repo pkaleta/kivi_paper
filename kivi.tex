@@ -103,11 +103,14 @@
 This paper describes the design and implementation of a lazy functional
 language compiler. The implementation is based on the
 \textit{G-machine}\cite{Jon87} and uses \textit{lazy graph reduction} to
-perform evaluation.
+perform evaluation. Current compiler, attached to this thesis, is implemented
+in Haskell, however in future I'm planning to reimplement it using Kivi itself,
+thus exploiting a technique called \textit{bootstrapping} (see
+\cite{wiki:bootstrapping}).
 
 The compilation process is implemented as a set of passes that eventually
 transforms source code written in Kivi into a simple intermediate language
-,\textit{lambda calculus} enriched with let(rec) expressions. Choice to
+, \textit{lambda calculus} enriched with let(rec) expressions. Choice to
 implement it by several passes was mainly motivated by readability concerns, as
 well as the will to make implementation and debugging as easy as possible.
 Another reason for this might be the fact that such separation made the
@@ -140,7 +143,7 @@ code generator.
 
 In order to translate the source of \textit{Kivi} into \textit{Lambda Calculus}
 it has to be available in a structured form so thate next passes could easily
-traverse it. \textit{Abstract Syntax Trees}\cite{wiki:ast} has been widely
+traverse it. \textit{Abstract Syntax Trees}\cite{ALSU07} has been widely
 adopted as a standard form of keeping the representation of source code in
 memory. The process of reading the input source file and producing AST from it
 is called \textit{parsing}.
@@ -173,6 +176,7 @@ parse = syntax . lex
 
 And can be seen as presented in Figure~\ref{fig:parser}.
 
+\vspace*{0.2in}
 \begin{figure}[h!]
   \centering
   \includegraphics[height=9cm]{parser}
@@ -2042,27 +2046,15 @@ specifically it is kept on the heap. The nodes of the graph are dynamically
 allocated on the heap. They contain a \textit{tag} that uniquely identifies the
 type of a node, as well as additinoal fields like values, in case of number
 nodes, or links (addresses) to other nodes in case of application nodes for
-instance. For example the abstract way of visualising application node might be
-like in the figure below:
+instance. For example the abstract way of visualising application and number
+nodes might be like in the figure~\ref{fig:num_ap_nodes}:
 
+\vspace*{0.2in}
 \begin{figure}[h!]
   \centering
-
-  TODO: Example of application node.
-
-  \caption{Application node on the heap.}
-  \label{fig:application_node}
-\end{figure}
-
-On the other hand number nodes might be perceived as following:
-
-\begin{figure}[h!]
-  \centering
-
-  TODO: Example of number node.
-
-  \caption{Number node no the heap.}
-  \label{fig:num_node}
+  \includegraphics[height=3cm]{nodes}
+  \caption{Application and number nodes on the heap.}
+  \label{fig:num_ap_nodes}
 \end{figure}
 
 \subsection{Evaluation Strategy}
@@ -2140,13 +2132,13 @@ each other, so it might be perceived as stack of stacks.
 
 This situation described above occurs when evaluating the expression \texttt{(1
 + (sqr 2)) * 3}. The graph built for this expression will look like one in
-Figure~\ref{fig:expression_graph}
+Figure~\ref{fig:expression_graph}, where inner nodes represented by black
+circles are application nodes.
 
+\vspace*{0.2in}
 \begin{figure}[h!]
   \centering
-
-  TODO: graf dla wyrazenia (1 + (sqr 2)) * 3
-
+  \includegraphics[height=7cm]{gmachine_graph}
   \caption{Graph created for expression \texttt{(1 + (sqr 2)) * 3}.}
   \label{fig:expression_graph}
 \end{figure}
@@ -2237,7 +2229,7 @@ consider following supercombinator definition:
 
 \vspace*{0.2in}
 \begin{lstlisting}[style=haskell,label=lst:sc_to_compile,caption=Supercombinator to compile.]
-calc x y = 3+x*y
+calc x y = 3 + x * y
 \end{lstlisting}
 
 After compiling it to G-machine instructions it will become:
@@ -2358,7 +2350,7 @@ example might be worth more that thousand words. Below I present the
 compilation steps required for expression from Listing~\ref{lst:sc_to_compile}.
 
 
-TODO: Example of compiling supercombinator from listing~\ref{lst:sc_to_compile}.
+TODO: Example of compiling supercombinator from Listing~\ref{lst:sc_to_compile}.
 
 
 \section{Interpreter}
