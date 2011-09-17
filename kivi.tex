@@ -1786,13 +1786,119 @@ collect supercombinators from:
     \texttt{collectDef}.
 \end{itemize}
 
-\section{Lazy Lambda Lifting}
+\section{Full laziness}
+\textit{Full laziness} refers to the optimization technique used in functional
+languages, that makes calculation of value of each expression in a computer
+program to occur at most once. A similar mechanism is used to in imperative
+language compilers when optimizing loops. Expressions that cannot change during
+loop's execution(\textit{loop invariants}) are moved outside a loop in order to
+prevent it from being recalculated multiple times.
+\textit{Lazy lambda lifting} is an optimization of lambda lifting technique to
+ensure full laziness. Ordinary lambda lifter used to make each free variable of
+a lambda abstraction a parameter to the new supercombinator. Lazy lambda lifter
+makes one step ahead and isolates \textit{maximally free subexpressions}
+(further referred as \textit{MFE}s) which are later used as supercombinator
+arguments instead. For that reason MFEs will be shared so their value will be
+calculated at most once. MFE is defined as follows:
+
+\begin{definition}
+  Maximally free subexpression e of a lambda abstraction is a maximal
+  expression holding two properties:
+
+  \begin{itemize}
+    \item it does not contain variables bound by that lambda abstraction.
+    \item e is not a subexpression of larger expression containing occurences of
+      variables bound by lambda abstraction
+  \end{itemize}
+\end{definition}
+
+As an example of how it works, consider the following Kivi function:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+f y =
+    let g = (\x . x + y * y)
+    in (g 1) + (g 2)
+\end{lstlisting}
+
+Simple lambda lifter described in Section~\ref{sec:lambda_lifting}, will
+calculate the \texttt{y * y} expression twice each time \texttt{f} is called.
+Transformation desribed above will identify \texttt{y * y} as MFE and make it
+an argument of a newly created supercombinator \texttt{g}. Thus, after this
+step, the expression will be transformed to following one, making the \texttt{y
+* y} to be calculated once per each call of \texttt{f}:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell,mathescape=true]
+g v x = x + v
+f y = let $v$ = y * y
+      in (g $v$ 1) + (g $v$ 2)
+\end{lstlisting}
+
+\subsection{Handling let(rec)s}
+This above approach works perfectly well until one realizes that let(rec)
+expressions cannot be handled this way. The problem is illustrated in listing
+below:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+f x = let g = (\y . let a = x * 2
+                    in let b = a + 1
+                    in b + y)
+      in g 1 + g 2
+\end{lstlisting}
+
+In construct shown below, the above algorithm will not be able to deduce that
+expression for \texttt{b} depends only on \texttt{x}, because it directly
+depends on \texttt{a} which was bound inside \texttt{g} lambda abstraction.
+This will result in value for expression \texttt{b} being caluclated twice.
+Nevertheless a full laziness requires this value to be calculated at most once.
+
+Simple fix that allows let(rec)s to be handled correctly consist of
+\textit{floating} them as far as possible, in our case yielding the following
+program:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+f x = let g = let a = x * 2
+              in let b = a + 1
+              in (\y . b + y)
+      in g 1 + g 2
+\end{lstlisting}
+
+In order to determine how far each let(rec) should be floated, the \textit{free
+variable set} needs to be calculated for each let(rec) bound variable.
+
+\begin{definition}
+  Free variable set of variable x is the set of free variables
+  that x depend on. Free variable set for let(rec) is the sum of free
+  variable sets of all let(rec) binders.
+\end{definition}
+
+Each let(rec) should be floated until the next surrounding lambda
+abstraction binds any of variables in let(rec)'s free variable set.
+
+
+\subsection{Handling MFEs}
+Another simple transformation will allow MFEs to be handled by algorithm
+described for let(rec)s. In order to achieve it, every expression $e$ that
+happens to be a maximally free subexpression of any enclosing lambda, should be
+substituted with expression \texttt{let $v$ = $e$ in $v$}, where $v$ is a newly
+introduced, unique variable. Let bindinges created in this way will become
+available for let(rec) lifter described above.
+
+Logic described in this section is possible to be implemented in a separate
+pass, instead of modifying the basic lambda lifting algorithm, and this is the
+approach I have taken.
+
+\subsection{Implementation}
+
 
 \chapter{Type checking}
 \textit{Type checking} is a process verifying and demanding certain conditions
 to hold in regard to types of objects in a computer program. One way to
 categorize programming languages is by the time when type checking is
-performed. There are two major notions of how this is implemented in modern
+performed. There are two major notions of how it can be implemented in modern
 programming languages. The process of checking and enforcing constraings on
 types can take place either at compile-time, which is often called a
 \textit{static typing} or during run-time, which is known as \textit{dynamic
