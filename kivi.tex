@@ -8,8 +8,12 @@
 \usepackage{setspace}
 \usepackage{graphicx}
 \newtheorem{definition}{Definition}[chapter]
-%\usepackage{courier}
 \usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+%\usepackage{courier}
+%\renewcommand{\ttdefault}{pcr}
+%\usepackage[T1]{fontenc}
+%\usepackage{courier}
+%\renewcommand*\familydefault{\ttdefault}
 
 \DeclareGraphicsExtensions{.pdf}
 \graphicspath{{./diagrams/}}
@@ -17,7 +21,7 @@
 \begin{document}
 
 \lstset{
-  basicstyle=\small\sffamily,           % the size of the fonts that are used for the code
+  basicstyle=\small\ttfamily,           % the size of the fonts that are used for the code
 %  frame=lines,
   numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
   stepnumber=2,                   % the step between two line-numbers. If it is 1, each line 
@@ -1851,8 +1855,9 @@ f x = let g = (\y . let a = x * 2
 In construct shown below, the above algorithm will not be able to deduce that
 expression for \texttt{b} depends only on \texttt{x}, because it directly
 depends on \texttt{a} which was bound inside \texttt{g} lambda abstraction.
-This will result in value for expression \texttt{b} being caluclated twice.
-Nevertheless a full laziness requires this value to be calculated at most once.
+This will result in value for expression \texttt{b} being calculated twice for
+each call to \texttt{f}. Nevertheless a full laziness requires this value to
+be calculated at most once.
 
 Simple fix that allows let(rec)s to be handled correctly consist of
 \textit{floating} them as far as possible, in our case yielding the following
@@ -1875,24 +1880,157 @@ variable set} needs to be calculated for each let(rec) bound variable.
   variable sets of all let(rec) binders.
 \end{definition}
 
-Each let(rec) should be floated until the next surrounding lambda
-abstraction binds any of variables in let(rec)'s free variable set.
-
+Each let(rec) should be floated until the next surrounding lambda abstraction
+binds any of variables in let(rec)'s free variable set. This is implemented by
+assigning level numbers to each let(rec)-bound variable, as well as for each
+variable defined by lambda abstraction. Level number for a let(rec) bound
+variable $v$, is a maximum of levels of free variables occuring in definition
+of $v$. On the other hand, level number of a variable $v$ introduced by lambda
+abstraction is the number of lambdas that surrounds $v$. By comparing these
+values during AST traversal, the algorithm knows which let(rec) bindings are to
+to be floated outwards.
 
 \subsection{Handling MFEs}
-Another simple transformation will allow MFEs to be handled by algorithm
-described for let(rec)s. In order to achieve it, every expression $e$ that
-happens to be a maximally free subexpression of any enclosing lambda, should be
-substituted with expression \texttt{let $v$ = $e$ in $v$}, where $v$ is a newly
-introduced, unique variable. Let bindinges created in this way will become
-available for let(rec) lifter described above.
+There is another simple transformation that allows MFEs to be handled by
+algorithm described for let(rec)s. It consists of substituting every expression
+$e$ that is a maximally free subexpression of any enclosing lambda, for
+expression \texttt{let $v$ = $e$ in $v$}, where $v$ is a newly introduced,
+unique variable. Let bindinges created in this way will become available for
+let(rec) lifter described above, so it's important to execute this
+transformation before floating part.
 
 Logic described in this section is possible to be implemented in a separate
 pass, instead of modifying the basic lambda lifting algorithm, and this is the
 approach I have taken.
 
 \subsection{Implementation}
+Implementation of lazy lambda lifter is contained in
+\textit{LazyLambdaLifter.hs} file. It consists of six passes that are going to
+bescribed below, starting from innermost one, and is implemented as function
+\texttt{lazyLambdaLift}:
 
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+lazyLambdaLift :: CoreProgram -> CoreProgram
+lazyLambdaLift (adts, scs) =
+    (adts, float
+         . mergeLambdas
+         . renameL
+         . identifyMFEs
+         . annotateLevels
+         . separateLambdas $ scs)
+\end{lstlisting}
+
+\subsubsection{Separating lambdas}
+The first part is executed in order to separate each lambda abstraction in a
+way that it contains only one argument. This behaviour is imlemented as
+\texttt{separateLambdas} function. When it encounters a lambda abstraction, we
+fold over the arguments and for each of them create a separate lambda that
+binds a single argument only.
+
+\subsubsection{Calculating levels}
+For the purpose of calculating the levels of expressions and binders it is
+necessary to first annotate each expression with free variables that occurs in
+it. This can be done by reusing the \texttt{freeVars} function defined earlier
+for a regular lambda lifter in Section~\ref{sec:lambda_lifting}. Once it is
+done, level of each lambda or let bound variable $v$ can be calculated by
+finding the innermost lambda that binds any of $v$'s free variables. The
+\texttt{annotateLevels} function works in exactly this way and returns an
+instance of \texttt{AnnProgram (Name, Level) Level} type. As we recall the
+\texttt{AnnExpr} definition from Section~\ref{sec:lambda_lifting}, it means
+that each binder and each expression are now associated the appropriate levels:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+annotateLevels :: [CoreScDefn] -> AnnProgram (Name, Level) Level
+annotateLevels = freeToLevel . freeVars
+\end{lstlisting}
+
+First interesting case arises when analysing lambda abstractions. Level of
+lambda abstraction is calculated by \texttt{freeSetToLevel} that takes a
+mapping between names and levels as well as free variables set and returns the
+maximum of levels of all variables in the set:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+freeSetToLevel :: Map Name Level -> Set Name -> Level
+freeSetToLevel env free =
+    maximum [ case Map.lookup var env of
+        Just level -> level
+        Nothing -> 0 | var <- (Set.toList free)]
+\end{lstlisting}
+
+Because each lambda-bound variable's level is the number of lambdas enclosing
+it, we can simply set it to the level of its context incremented by one.
+
+Another case that demands more care arises when calculating the levels of
+let(rec) bindings. Here, the level of let(rec) is set to level of let(rec)'s
+body, and levels of binders are assigned a maximum of levels of free variables
+occuring on right-hand-side of any binder.
+
+\subsubsection{Identifying MFEs}
+Next phase consists of identification and transformation of found MFEs.
+Implementation is rather straightforward. Function \texttt{identifyMFEsExpr}
+compares the levels of enclosing context with level of current expression. If
+they differ it means that we have found an MFE. After this check, function is
+recursively applied to subexpressions. One thing to be mentioned however, is
+the fact that there is no need to mark simple expressions, such as variables or
+constant values, as MFEs in order to avoid clutter.
+
+\subsubsection{Renaming variables}
+Rename pass takes place after identifying MFEs to rename all binders. This
+part is neccessary in order to avoid errors that can be caused during floating
+because of duplicate identifiers present. It exploits the generic function
+\texttt{renameGen} used earlier in lambda lifting (see
+Section~\ref{sec:lambda_lifting}).
+
+\subsubsection{Merging lambda abstractions}
+This phase is the opposite of separating lambda abstractions performed at the
+beginning. Here we merge the directly nested lambda abstractions into one that
+binds all the arguments.
+
+\subsubsection{Floating let(rec)s}
+The final pass lifts let(rec)s to appropriate levels. Each expression is
+annotated with \texttt{FloatedDefns} type:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+type FloatedDefns = [(Level, IsRec, [(Name, Expr Name)])]
+\end{lstlisting}
+
+It is the list that contains bindings to be floated outwards along with its
+level. The most interesting cases again occur for lambdas and let(rec)s.
+
+When floating lambda abstractions, definitions floated from inside of lambda's
+definition are partitioned according to their level. Those with level with
+value less that lambda's one, are lifted further, whereas others are placed
+inside lambda, by defining an appropriate let construct (see \texttt{wrap}
+function in listing below). The code performing the above logic is presented
+below:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+floatExpr (ELam args expr) = (outerFds, ELam args' $ wrap innerFds expr')
+    where
+        args' = [arg | (arg, level) <- args]
+        (_, curLevel) = head args
+        (fdBody, expr') = floatExpr expr
+        (innerFds, outerFds) = List.partition checkLevel fdBody
+
+        -- predicate to partition the definitions based on definition level
+        checkLevel (level, isRec, defns) = level >= curLevel
+
+        -- helper function which wraps an expr into let binding with given defns
+        wrap floatedDefns expr =
+            foldr wrapDefn expr floatedDefns
+            where
+                wrapDefn (level, isRec, defns) expr = ELet isRec defns expr
+\end{lstlisting}
+
+In let(rec) case, there are three sources of floated definitions. First two are
+extracted from binder right-hand-sides and let(rec) body. The last one consists
+of local definitions introduced by let(rec) itself. These all, are combined into
+single list and floated outwards until the next lambda abstraction.
 
 \chapter{Type checking}
 \textit{Type checking} is a process verifying and demanding certain conditions
