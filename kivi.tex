@@ -9,11 +9,7 @@
 \usepackage{graphicx}
 \newtheorem{definition}{Definition}[chapter]
 \usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
-%\usepackage{courier}
-%\renewcommand{\ttdefault}{pcr}
-%\usepackage[T1]{fontenc}
-%\usepackage{courier}
-%\renewcommand*\familydefault{\ttdefault}
+\usepackage{courier}
 
 \DeclareGraphicsExtensions{.pdf}
 \graphicspath{{./diagrams/}}
@@ -2407,19 +2403,19 @@ to other node, effectively making the machine to use the values computed last
 time redex was reduced. This will prevent it from performing the same
 calculations more than once.
 
-\subsection{Evaluation Example}
-Example of evaluating expression (TODO: example expression) is presented
-in Figure~\ref{fig:example_reduction}.
-
-\begin{figure}[h!]
-  \centering
-
-  TODO: Obrazek ilustrujacy stos i zbudowane w ten sposob drzewo ewaluacji
-  wyrazenia
-
-  \caption{Example reduction process.}
-  \label{fig:example_reduction}
-\end{figure}
+%\subsection{Evaluation Example}
+%Example of evaluating expression (TODO: example expression) is presented
+%in Figure~\ref{fig:example_reduction}.
+%
+%\begin{figure}[h!]
+%  \centering
+%
+%  TODO: Obrazek ilustrujacy stos i zbudowane w ten sposob drzewo ewaluacji
+%  wyrazenia
+%
+%  \caption{Example reduction process.}
+%  \label{fig:example_reduction}
+%\end{figure}
 
 \section{Compiling supercombinators}
 Compilation is a process of turning supercombinator body into a sequence of
@@ -2507,18 +2503,20 @@ n} instruction implements the behaviour described in
 Section~\ref{sec:updating}. The \texttt{n} argument represents the offset of
 the root redex from the top of stack. \texttt{Pop n} on the other hand is
 supposed to remove all elements, that supercombinator declared on the stack,
-and leave the result as a top element. The process of executing G-code
-instructions from Listing~\ref{lst:gcode_supercombinator} is shown in figure
-below:
+and leave the result as a top element.
 
-\begin{figure}[h!]
-  \centering
+%The process of executing G-code
+%instructions from Listing~\ref{lst:gcode_supercombinator} is shown in figure
+%below:
 
-  TODO: G-code execution
-
-  \caption{Execution of supercombinator from Listing~\ref{lst:gcode_supercombinator}.}
-  \label{fig:gcode_execution}
-\end{figure}
+%\begin{figure}[h!]
+%  \centering
+%
+%  TODO: G-code execution
+%
+%  \caption{Execution of supercombinator from Listing~\ref{lst:gcode_supercombinator}.}
+%  \label{fig:gcode_execution}
+%\end{figure}
 
 \subsection{Compiler implementation}
 Kivi's compiler is implemented as a set of \textit{compilation schemes} in
@@ -2589,13 +2587,14 @@ argument. At this point when the generated code is executed the argument will
 be pushed on the top of the runtime stack. Therefore all variables that were
 there, will be moved up by one stack cell. This is exactly what
 \texttt{argOffset} function does. After generating code for function too, an
-\texttt{Mkap} instruction is added to apply argument to it. Again a simple
-example might be worth more that thousand words. Below I present the
-compilation steps required for expression from Listing~\ref{lst:sc_to_compile}.
+\texttt{Mkap} instruction is added to apply argument to it.
 
-
-TODO: Example of compiling supercombinator from Listing~\ref{lst:sc_to_compile}.
-
+%Again a simple
+%example might be worth more that thousand words. Below I present the
+%compilation steps required for expression from Listing~\ref{lst:sc_to_compile}.
+%
+%TODO: Example of compiling supercombinator from Listing~\ref{lst:sc_to_compile}.
+%
 
 \section{Interpreter}
 \label{sec:interpreter}
