@@ -495,9 +495,9 @@ run :: String -> String
 run = showResults
     . eval
     . compile
+    . analyseDeps
     . lambdaLift
     . lazyLambdaLift
-    . analyseDeps
     . transformToLambdaCalculus
     . mergePatterns
     . tag
@@ -1398,176 +1398,6 @@ important to run the conformality transform before pattern matching phase.
 
 %\section{Transforming case expressions}
 
-\section{Dependency Analysis}
-Dependency analysis is a process of splitting up let(rec) bindings
-into minimial-sized groups and preferring let over letrec
-where possible. The reason for this choice is because the non-recursive version
-of binding can be implemented more efficiently. The fact that let(rec)
-expressions are not always as optimal as they could, is twofold:
-\begin{itemize}
-  \item First, programmer might have ommited the fact that the
-    let(rec) expression he implemented is not recursive at all.
-  \item Previous phases\footnote{as well as passes that are not yet available
-    in Kivi} might be unnecesarily pessimistic, for example where
-    clauses are always transformed into recursive lets for simplicity
-    reasons.
-\end{itemize}
-Consider the following Kivi binding as an illustration of that fact:
-
-\vspace*{0.2in}
-\begin{lstlisting}[style=haskell,label=lst:letrec_dependency_example,caption={Example of
-  letrec before dependency analysis.}]
-letrec
-    p       = res + 1;
-    q       = res + 2;
-    x       = p + q;
-    fac n   = if (n == 0) 1 (n * fac(n-1));
-    res     = fac x;
-    gcd a b = if (b == 0) a (gcd b (a % b))
-in
-    gcd res 3
-\end{lstlisting}
-After analysing the dependencies and splitting the letrec into minimal
-subgroups the expression will become:
-
-\vspace*{0.2in}
-\begin{lstlisting}[style=haskell,label=lst:letrec_after_anlysis,caption={letrec
-  after performing dependency anlysis.}]
-letrec
-    fac n = if (n == 0) 1 (n * fac(n-1))
-in letrec
-    gcd a b = if (b == 0) a (gcd b (a % b))
-in letrec
-    p = res + 1
-    q = res + 2
-    x = p + q
-    res = fac x
-in
-    gcd res 3
-\end{lstlisting}
-This section provides an efficient algorithm to perform dependency analysis
-using \textit{strongly connected components}.
-
-\subsection{The Algorithm}
-The algorithm consists of a few steps that will be described below. The source
-code for this logic has been placed in \textit{DependencyAnalyser.hs} module
-with \texttt{analyseDeps} function as an entry point. However in order to fully
-understand further deliberations, it is necessary to introduce a couple of
-definitions, that will be given througout this section.
-\begin{definition}
-A directed graph is a pair G = (V, E) of:
-\begin{itemize}
-  \item a set V, whose elementes are called vertices or nodes,
-  \item a set E of ordered pairs of vertices, called arcs, directed edges, or
-    simply edges.
-\end{itemize}
-\end{definition}
-
-\subsubsection{Constructing Dependency Graph}
-The first step of dependency analysis algorithm is to create a
-\textit{dependency graph} for each each letrec construct. It is
-defined as follows:
-\begin{definition}
-A dependency graph is a directed graph, where:
-\begin{itemize}
-  \item a set $V$ of vertices is the set of all variables bound by
-    letrec
-  \item there is an edge from vertex representing variable a to vertex
-    representing variable b, if b is present in the right-hand side of
-    binding for a. Formally speaking, if b occurs as a free variable
-    (Definition~\ref{def:free_variable}) definition of a.
-\end{itemize}
-\end{definition}
-
-To get a feeling how this applies in practice lets look at the dependency graph
-build for our example from Listing~\ref{lst:letrec_dependency_example}:
-
-\vspace*{0.2in}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=4cm]{dependency_graph}
-  \caption{Dependency graph constructed for letrec binding.}
-  \label{fig:letrec_dependency_graph}
-\end{figure}
-
-\subsubsection{Strongly Connected Components}
-Next in order to group variables that depend on each other into one letrec
-binding, we have to determine which variables are mutually recursive. This is
-done by calculating the \textit{strongly connected components} (or
-\textit{SCC}) of a dependency graph. To gain a deep insight into analysis of an
-algorithm, see \cite{Cormen03}. Definition of strongly connected components can
-be found below:
-
-\begin{definition}
-Directed graph is said to be strongly connected if there is a path from each
-vertex in the graph to every other vertex. In particular, this means paths in
-each direction: a path from a to b and also a path from b to a.
-The strongly connected components of a directed graph G are its maximal
-strongly connected subgraphs.
-\end{definition}
-
-Strongly connected components found for dependency graph formed for running
-example is presented in Figure~\ref{fig:topsorted_scc}. There will be three
-coalesced vertices created and they are shown by dotted lines.
-
-\vspace*{0.2in}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[height=5cm]{scc_graph}
-  \caption{Strongly connected components of a dependency graph.}
-  \label{fig:topsorted_scc}
-\end{figure}
-
-\subsubsection{Topological Sorting}
-After successfully determining the maximal sets of mutually dependent variable
-bindings, it is time to find out which of these groups depend on each other.
-Exploiting this information will make it possible to arrange bindings in letrec
-in a way that all needed variables will be in scope when evaluating the value
-of bindings that depend on them. The way to perform this step is to transform
-the graph further by coalescing each strongly connected component into a single
-vertex.  The resulting graph will be acyclic, so it would become possible to
-sort the coalesced vertices \textit{topologically}. Again the full description
-of \textit{topological sorting} algorithm can be found in \cite{Cormen03}.
-
-\subsubsection{Building a new letrec}
-The last step is to create the letrec binding for each strongly
-connected component in topological order. In our example the structure from
-Listing~\ref{lst:letrec_after_anlysis} will be created.
-
-
-\subsection{Implementation}
-Regarding implementation issues, the heart of the code responsible for
-aforementioned tasks is implemented in \texttt{analyseExpr} function in case
-for let(rec) expressions. First of all, each AST expression is
-augumented with its free variables. Based on that, function \texttt{getEdges}
-folds over letrec bindings and creates edges of the dependency graph:
-
-\vspace*{0.2in}
-\begin{lstlisting}[style=haskell]
-getEdges edges (name, (rhsFree, rhs)) =
-    edges ++ [(name, v) | v <- (Set.toList $ Set.intersection binderSet rhsFree)]
-\end{lstlisting}
-
-Next, \texttt{scc} function is invoked in order to find strongly connected
-components of dependency graph. It does so by first computing, for each vertex
-$x$, the set of vertices accessible (directly or indirectly) from that vertex
-using forward edges, as well as sets of vertices accessible using backward
-edges. By computing the intersection of these sets, we can effectively get
-component of vertex $x$:
-
-\vspace*{0.2in}
-\begin{lstlisting}[style=haskell]
-scc :: Show a => Ord a => (a -> [a]) -> (a -> [a]) -> [a] -> [Set a]
-scc ins outs vs = topSortedSccs
-    where
-        topSortedVs = snd $ dfs outs (Set.empty, []) vs
-        topSortedSccs = snd $ spanDfs ins (Set.empty, []) topSortedVs
-\end{lstlisting}
-
-The rest of the \texttt{analyseExpr} function is meant to split the input
-letrec expression according to the computed strongly connected
-component set.
-
 \section{Lambda Lifting}
 \label{sec:lambda_lifting}
 This section provides a description of how lambda abstractions are implemented
@@ -2031,6 +1861,176 @@ In let(rec) case, there are three sources of floated definitions. First two are
 extracted from binder right-hand-sides and let(rec) body. The last one consists
 of local definitions introduced by let(rec) itself. These all, are combined into
 single list and floated outwards until the next lambda abstraction.
+
+\section{Dependency Analysis}
+Dependency analysis is a process of splitting up let(rec) bindings
+into minimial-sized groups and preferring let over letrec
+where possible. The reason for this choice is because the non-recursive version
+of binding can be implemented more efficiently. The fact that let(rec)
+expressions are not always as optimal as they could, is twofold:
+\begin{itemize}
+  \item First, programmer might have ommited the fact that the
+    let(rec) expression he implemented is not recursive at all.
+  \item Previous phases\footnote{as well as passes that are not yet available
+    in Kivi} might be unnecesarily pessimistic, for example where
+    clauses are always transformed into recursive lets for simplicity
+    reasons.
+\end{itemize}
+Consider the following Kivi binding as an illustration of that fact:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell,label=lst:letrec_dependency_example,caption={Example of
+  letrec before dependency analysis.}]
+letrec
+    p       = res + 1;
+    q       = res + 2;
+    x       = p + q;
+    fac n   = if (n == 0) 1 (n * fac(n-1));
+    res     = fac x;
+    gcd a b = if (b == 0) a (gcd b (a % b))
+in
+    gcd res 3
+\end{lstlisting}
+After analysing the dependencies and splitting the letrec into minimal
+subgroups the expression will become:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell,label=lst:letrec_after_anlysis,caption={letrec
+  after performing dependency anlysis.}]
+letrec
+    fac n = if (n == 0) 1 (n * fac(n-1))
+in letrec
+    gcd a b = if (b == 0) a (gcd b (a % b))
+in letrec
+    p = res + 1
+    q = res + 2
+    x = p + q
+    res = fac x
+in
+    gcd res 3
+\end{lstlisting}
+This section provides an efficient algorithm to perform dependency analysis
+using \textit{strongly connected components}.
+
+\subsection{The Algorithm}
+The algorithm consists of a few steps that will be described below. The source
+code for this logic has been placed in \textit{DependencyAnalyser.hs} module
+with \texttt{analyseDeps} function as an entry point. However in order to fully
+understand further deliberations, it is necessary to introduce a couple of
+definitions, that will be given througout this section.
+\begin{definition}
+A directed graph is a pair G = (V, E) of:
+\begin{itemize}
+  \item a set V, whose elementes are called vertices or nodes,
+  \item a set E of ordered pairs of vertices, called arcs, directed edges, or
+    simply edges.
+\end{itemize}
+\end{definition}
+
+\subsubsection{Constructing Dependency Graph}
+The first step of dependency analysis algorithm is to create a
+\textit{dependency graph} for each each letrec construct. It is
+defined as follows:
+\begin{definition}
+A dependency graph is a directed graph, where:
+\begin{itemize}
+  \item a set $V$ of vertices is the set of all variables bound by
+    letrec
+  \item there is an edge from vertex representing variable a to vertex
+    representing variable b, if b is present in the right-hand side of
+    binding for a. Formally speaking, if b occurs as a free variable
+    (Definition~\ref{def:free_variable}) definition of a.
+\end{itemize}
+\end{definition}
+
+To get a feeling how this applies in practice lets look at the dependency graph
+build for our example from Listing~\ref{lst:letrec_dependency_example}:
+
+\vspace*{0.2in}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[height=4cm]{dependency_graph}
+  \caption{Dependency graph constructed for letrec binding.}
+  \label{fig:letrec_dependency_graph}
+\end{figure}
+
+\subsubsection{Strongly Connected Components}
+Next in order to group variables that depend on each other into one letrec
+binding, we have to determine which variables are mutually recursive. This is
+done by calculating the \textit{strongly connected components} (or
+\textit{SCC}) of a dependency graph. To gain a deep insight into analysis of an
+algorithm, see \cite{Cormen03}. Definition of strongly connected components can
+be found below:
+
+\begin{definition}
+Directed graph is said to be strongly connected if there is a path from each
+vertex in the graph to every other vertex. In particular, this means paths in
+each direction: a path from a to b and also a path from b to a.
+The strongly connected components of a directed graph G are its maximal
+strongly connected subgraphs.
+\end{definition}
+
+Strongly connected components found for dependency graph formed for running
+example is presented in Figure~\ref{fig:topsorted_scc}. There will be three
+coalesced vertices created and they are shown by dotted lines.
+
+\vspace*{0.2in}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[height=5cm]{scc_graph}
+  \caption{Strongly connected components of a dependency graph.}
+  \label{fig:topsorted_scc}
+\end{figure}
+
+\subsubsection{Topological Sorting}
+After successfully determining the maximal sets of mutually dependent variable
+bindings, it is time to find out which of these groups depend on each other.
+Exploiting this information will make it possible to arrange bindings in letrec
+in a way that all needed variables will be in scope when evaluating the value
+of bindings that depend on them. The way to perform this step is to transform
+the graph further by coalescing each strongly connected component into a single
+vertex.  The resulting graph will be acyclic, so it would become possible to
+sort the coalesced vertices \textit{topologically}. Again the full description
+of \textit{topological sorting} algorithm can be found in \cite{Cormen03}.
+
+\subsubsection{Building a new letrec}
+The last step is to create the letrec binding for each strongly
+connected component in topological order. In our example the structure from
+Listing~\ref{lst:letrec_after_anlysis} will be created.
+
+
+\subsection{Implementation}
+Regarding implementation issues, the heart of the code responsible for
+aforementioned tasks is implemented in \texttt{analyseExpr} function in case
+for let(rec) expressions. First of all, each AST expression is
+augumented with its free variables. Based on that, function \texttt{getEdges}
+folds over letrec bindings and creates edges of the dependency graph:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+getEdges edges (name, (rhsFree, rhs)) =
+    edges ++ [(name, v) | v <- (Set.toList $ Set.intersection binderSet rhsFree)]
+\end{lstlisting}
+
+Next, \texttt{scc} function is invoked in order to find strongly connected
+components of dependency graph. It does so by first computing, for each vertex
+$x$, the set of vertices accessible (directly or indirectly) from that vertex
+using forward edges, as well as sets of vertices accessible using backward
+edges. By computing the intersection of these sets, we can effectively get
+component of vertex $x$:
+
+\vspace*{0.2in}
+\begin{lstlisting}[style=haskell]
+scc :: Show a => Ord a => (a -> [a]) -> (a -> [a]) -> [a] -> [Set a]
+scc ins outs vs = topSortedSccs
+    where
+        topSortedVs = snd $ dfs outs (Set.empty, []) vs
+        topSortedSccs = snd $ spanDfs ins (Set.empty, []) topSortedVs
+\end{lstlisting}
+
+The rest of the \texttt{analyseExpr} function is meant to split the input
+letrec expression according to the computed strongly connected
+component set.
 
 \chapter{Type checking}
 \textit{Type checking} is a process verifying and demanding certain conditions
