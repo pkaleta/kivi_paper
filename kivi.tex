@@ -2989,6 +2989,27 @@ several parts:
     cycle.
 \end{itemize}
 
+\chapter{Conclusions and further work}
+This thesis describes the design and implementation of Kivi, a new lazy
+functional programming language. It dives through the details of parsing the
+source code into abstract syntax tree, transforming it into enriched lambda
+calculus that is eventually converted into a form of G-machine instructions.
+Two different ways of executing G-code has also been presented. Due to
+separation of compiler into set of subsequent passes, the implementation was
+made easy to write, test and debug. Inserting additional logic, created as
+another pass, should be done easily.
+
+Implemented language is capable of executing examples that were presented
+throughout the thesis, although many improvements are possible. Among them, the
+implementation of dynamic memory allocator for LLVM backend seems to be one of
+the most important ones. Also the implementation of a smarter garbage collector
+would be desired. Besides it would be valuable to compare the speed of
+execution of programs written in Kivi with another languages.
+
+Kivi as is, provides a platform for developing the programming language for
+concurrent processing. In future I am planning to implement Erlang distribution
+protocols in order to allow communication with distributed Erlang nodes.
+
 
 \bibliographystyle{alpha}
 \bibliography{kivi}
