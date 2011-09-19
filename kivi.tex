@@ -148,7 +148,7 @@ code generator.
 
 In order to translate the source of Kivi into \textit{lambda calculus} it has
 to be available in a structured form so that subsequent passes could easily
-traverse it. \textit{Abstract Syntax Trees}\cite{ALSU07} has been widely
+traverse it. \textit{Abstract syntax trees}\cite{ALSU07} has been widely
 adopted as a form of keeping the representation of source code in memory. The
 process of reading the input source file and producing AST from it is called
 \textit{parsing}.
@@ -167,7 +167,7 @@ Parsing consists of two passes:
     classifying sections of a string of input characters. The resulting tokens
     are then passed for further processing.
   \item \textit{Syntax analysis} is the process of analyzing the stream of
-    tokens and building an \textit{Abstract Syntax Tree} from it.
+    tokens and building an abstract syntax tree from it.
 \end{itemize}
 
 This whole parser is implemented as\footnote{Where \texttt{PatProgram} is a
@@ -218,7 +218,7 @@ number tokens may be a nice example of how it works:
 \section{Syntax analysis}
 \label{sec:syntax_analysis}
 Once lexer is capable of emitting tokens, it becomes viable to convert them
-into a hierarchical structure called \textit{Abstract Syntax Tree} (or
+into a hierarchical structure called \textit{abstract syntax tree} (or
 \textit{AST} for short). Abstract syntax trees are tree representations of
 abstract syntactic structures written in programming language. Nodes in such
 tree represent different constructs from the source code. The word abstract is
@@ -1441,7 +1441,7 @@ Chapter 6 in \cite{JonLes00}, as well as Chapter 13 in \cite{Jon87} to get
 additional information on this subject.
 
 For the purpose of our \textit{lambda lifter} described here, I am going to
-introduce the annotated version of Abstract Syntax Tree, that is capable of
+introduce the annotated version of abstract syntax tree, that is capable of
 carrying additional information needed for transformations described in this
 chapter. The type that implements it was called \texttt{AnnExpr} and has
 been placed in \textit{LambdaLifter.hs}. Its full definition is following:
@@ -1527,7 +1527,7 @@ implemented in Kivi. The source file to look for implementation details is
 \textit{LambdaLifter.hs}.
 
 \subsection{Annotating expressions with free variables}
-The first phase of an algorithm is to annotate each Abstract Syntax Tree
+The first phase of an algorithm is to annotate each abstract syntax tree
 node, with the set of free variables occuring in it. As it can be noticed,
 in the type signature for function \texttt{freeVars}, it transforms a list of
 supercombinator definitions into the similar list\footnote{\texttt{AnnProgram}
@@ -2077,37 +2077,36 @@ types can take place either at compile-time, which is often called a
 typing}.
 
 \section{Static and Dynamic Typing}
-Static typing allows to catch many type errors early in the development cycle.
-This, at least in theory, should improve the robustness of the final program.
-Nevertheless that static type checker can only utilize information that are
-present during compile-time, it can prove that checked conditions will hold for
-every possible execution path of a progrem. This successfully eliminates the
-need to perform type checking for every execution of a program, as will be the
-case in dynamically typed languages. It might result in faster execution times
-and more optimal memory usage.
+Static typing allows to catch many type errors early in the development cycle,
+which should improve the robustness of the final program. Although static type
+checker can only utilize information that are present during compile-time, it
+can prove that checked conditions will hold for every possible execution path
+of a progrem. This successfully eliminates the need to perform type checking
+for every execution of a program, as will be the case in dynamically typed
+languages. It might result in faster execution times and more optimal memory
+usage.
 
 On the other hand, languages that are dynamically typed, are those in which
 type checking is performed during run-time instead of compile-time. Internally,
-type information is gathered in form of tags that are then associated with
+type information is gathered in form of tags that are later associated with
 objects and contain, among other data, information about types. Variables in
-dynamically typed languages can refer to data of any type, so variables does
-not have a type, whereas data does. Dynamic languages does not enforce as high
-level of conservativeness as static ones, which may result in run-time errors.
-However the lack of compile-time checks may result in faster compilation times
-and easier adoption of dynamic programming language features thans to data
-available at runtime. This data might also make it possible to perform more
-advanced type checks which might result in certain optimizations which would
-otherwise be impossible.
-
+dynamically typed languages can refer to data of any type, thus variables are
+said not have a type. Dynamic languages does not enforce as high level of
+conservativeness as static ones, which may result in run-time errors. However
+the lack of compile-time checks may result in faster compilation times and
+easier adoption of dynamic programming language features. Run-time data might
+also make it possible to perform more advanced type checks, which might result
+in certain optimizations and will not be possible during compile-time
+analysis.
 \section{Polymorphism}
 Polymorphism, in regard to programming languages, relates to the ability of a
 computer program to contain many types or to act on many types. The common way
-to achieve it is to allow different instances of certain structures to perform
-operations on different types of data. This way it will allow the same code to
-be executed on different kinds of objects, thus allowing a programmer to
-effectively reuse code. There are few different kinds of polymorphism, but the
-one that I will be particularly interested in is called \textit{parametric
-polymorphism} \cite{Car88}.
+of achieveing it, is to allow different instances of certain structures to
+perform operations on different types of data. This way it will become
+possible, for the same code to be executed on different kinds of objects, thus
+allowing a programmer to effectively reuse code. There are few different kinds
+of polymorphism, but the one that I will be particularly interested in is
+called \textit{parametric polymorphism} \cite{Car88}.
 
 Parametric polymorphism is a language feature that allows one piece of code to
 act in the same way on chunks of data that may not necessarily have the
@@ -2131,8 +2130,9 @@ later be rediscovered. The ability of a compiler to deduce missing types
 that supports implicit polymorphism, as well as has inferencing mechanisms
 implemented, a programmer can leave out the types of expressions while having
 his program rigorously type-checked as the types were there. It has to be
-mentioned however, that can be successfully typed using explicit polymorphism,
-but types cannot be inferred for them using implicit one.
+mentioned however, that there are programs which can be successfully typed
+using explicit polymorphism, but types cannot be inferred for them using
+implicit one.
 
 The algorithm to type check the program, that I have implemented in Kivi, is
 known as \textit{Hindley-Milner algorithm}. Its most appealing property is that
@@ -2141,13 +2141,13 @@ most general typing possible is returned.
 
 \section{Hindley-Milner algorithm}
 Informally Hindley-Milner algorithm works by inspecting an expression and
-creating a set of type constraints that are based on the usages of certain
+creating a set of type constraints that are based on the occurences of certain
 values. Once the set is complete, the process called \textit{unification} takes
 place in order to reconstruct the types. Unification checks whether there exist
 a typing, such that all constraints would be satisfied. In case such typing
-exist, it means that expression is well-typed and the typing is returned.
-On the other hand if at least two constraints cannot be unified to a common
-type, it means that algorithm is incapable of devising a correct typing for an
+exist, it means that expression is well-typed and the typing is returned.  On
+the other hand if at least two constraints cannot be unified to a common type,
+it means that algorithm is incapable of devising a correct typing for an
 expression. As an example consider the following function
 definition\footnote{The case when \texttt{head} is given an empty list is
 omitted in order to reduce verbosity.}:
@@ -2182,22 +2182,21 @@ $\epsilon$ and $[\epsilon]$:
 \end{code}
 
 This completes the derivation of types for \texttt{head} function. It was an
-informal look of how Hindley-Milner retrieves missing types. In order to gain
+informal view of how Hindley-Milner retrieves missing types. In order to gain
 more insight of how real algorithm works, I encourage to read the rest of this
 chapter which dives into the implementation details.
 
 \subsection{Implementation}
 Implementation of Hindley-Milner type checking algorithm can be found in
-\textit{TypeChecker.hs} module. One of the first things that is defined in this
-file is the data type to represent types itself. Types can be either type
+\textit{TypeChecker.hs} module. One of the first definitions that this module
+introduce is the data type to represent types itself. Types can either be type
 variables or type operators. Type variables are created using \texttt{TypeVar}
-constructor and consist of name as well as an instance which could be either be
+constructor and consist of name, as well as an instance which could either be
 null, or represent another type variable (creating a recursive chain) or a type
-operator. \texttt{TypeOp} creates type operators. A type operator might
-be either simple, such as \texttt{int} or \texttt{bool} or complex. As en
-example of complex type operator consider the $\rightarrow$, presented
-above, standing for function types. Complex type operators take other types as
-arguments.
+operator. \texttt{TypeOp} creates type operators. A type operator might either
+be simple, such as \texttt{int} and \texttt{bool} or complex. As en example of
+complex type operator consider the $\rightarrow$, presented above, standing for
+function types. Complex type operators take other types as arguments.
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -2224,40 +2223,40 @@ variables:
 
 The above definition means that different occurrences of a generic type
 variable in a type expression may be instantiated to different types. It can be
-implemented by simply performing a deep-copy of the type variables and making
-the non-generic ones shared between instances. In order to determine whether
-the variable $v$ is generic during run-time of an algorithm, a simple check can be
-performed, to find out if the \texttt{nonGeneric} set contains $v$.
+accomplished by performing a deep-copy of type variables, where generic ones are
+fresh variables, whereas the non-generic ones are shared between instances.  In
+order to determine whether the variable $v$ is generic during run-time of an
+algorithm, a simple check can be performed, to find out if the
+\texttt{nonGeneric} set contains $v$.
 
 \subsubsection{Supercombinators}
-Type checking is performed for each supercombinator. First each variable
+Type checking is performed for each supercombinator. Firstly each variable
 introduced in supercombinator arguments is assigned a new and unique type
 variable. The actual type of this variable is to be deremined later by its
-occurences in supercombinator body. The mapping between argument name and its
-type variable is saved in \texttt{typeInstanceEnv} variable. In order to do
-this the body of a supercombinator is type-checked and returned type is
-considered to be the type of supercombinator. This logic is implemented by
-\texttt{typeCheckSc} function.
+occurences in supercombinator's body. The mapping between argument name and its
+type variable is saved in \texttt{typeInstanceEnv} variable. Supercombinator's
+body is type-checked and returned type is considered to be the type of
+supercombinator. This logic is implemented by \texttt{typeCheckSc} function.
 
 \subsubsection{Applications}
-When \texttt{typeCheckExpr} enounters an application type of expression, the
-type-checking is performed for both function and argument part of application.
-New type variable is created for function result type. Assume that type
-inferred for function argument is $t_a$, for function is $t_f$ and for result
-$t_r$, then the algorithm has to unify type $t_a \rightarrow
-t_r$ with $t_f$. This implies that the type for $t_f$ is indeed a function
-type\footnote{because $\rightarrow$ operator represents function types} whose
-domain is $t_a$ and the codomain is type of result, $t_r$.
+When \texttt{typeCheckExpr} enounters an application, the type-checking is
+performed for both function and argument part of expression. New type
+variable is created for function result type. Assume that type inferred for
+function argument is $t_a$, for function is $t_f$ and for result $t_r$. In such
+situation the algorithm has to unify types $t_a \rightarrow t_r$ and $t_f$.
+This implies that the type for $t_f$ is indeed a function type\footnote{because
+$\rightarrow$ operator represents function types} whose domain is $t_a$ and the
+codomain is type of result, $t_r$.
 
 \subsubsection{Let(rec) bindings}
-In order to type-check let expressions, first type-checking of
-bindings introduced by let takes place, obtaining an updated
-environment, \texttt{typeInstanceEnv}. Body of let will by checked
-using this fresh environment. The situation changes a bit in case of recursive
-let expressions. Before analyzing each definition it is necessary to
-first assign a new type variable to each bound variable, creating an updated
-environment. Once the new environment is available, types are checked for each
-definition body as well as the body of a whole letrec in the end.
+First step in type-checking let expressions, is applying the algorithm to
+bindings introduced by let, obtaining an updated environment,
+\texttt{typeInstanceEnv}. Body of let is then checked using this fresh
+environment. The situation changes a bit in case of recursive let expressions.
+Before analyzing each definition, it is necessary to first assign a new type
+variable to each letrec-bound variable, creating an updated environment. Once
+it is available, types are checked for each definition body, as well as the
+body of a whole letrec in the end.
 
 \subsubsection{Lambda abstractions}
 There is no need to typecheck anonymous functions, as the lambda lifter
@@ -2266,9 +2265,9 @@ translated them to a top-level supercombinators.
 \subsubsection{Identifiers and Constants}
 In case of identifiers a \textit{fresh type} needs to be retrieved. Non-generic
 type variables are shared between fresh and old type, whereas generic ones are
-copied. Type-checking constants are straight-forward because an algorihtm
-immediately knows its type. Therefore, for ints the \texttt{int} type operator
-is returned, for booleans the \texttt{char}, etc.
+copied. Type-checking of constants is straightforward, because typing can be
+retrieved by simply checking the expression type. Therefore, for ints the
+\texttt{int} type operator is returned, for booleans the \texttt{bool}, etc.
 
 \chapter{The G-machine}
 The G-machine is an implementation of virtual machine based on the idea of
@@ -2278,22 +2277,22 @@ intermediate code called \textit{G-code} and later translating it further or
 executing in an interpreter.
 
 The advantage of choosing the intermediate representation instead of compiling
-to a particular machine code lies in a fact that it would require rewriting of
-the whole compiler if later decided to change the machine. Moreover, one of the
-main characteristics of intermediate representations is the fact that they
-should resemble the original source language, and generating the machine code
-from it, should remain simple as well. Thus, translating the original source
-code first into the G-code and later to the machine of our choice shall be much
-simpler than doing it in a straight-forward manner. The third argument for
-preferring having intermediate representation over a concrete one is that it
-will give, the ability to create virtual machine interpreters or compilers
-for any particular computer architecture, by means of only switching
-the code generator. Code generators will then need to transform the
-intermediate language into machine code of that machine. This will greatly
-simplify the development of such tools, because the issues of compiling
-supercombinators to sequential code and compiling to machine code will be
-clearly separated.  Thanks to these facts I was able to easily create two
-implementations of the G-machine:
+to a particular machine code, is the fact that it would require rewriting of
+the whole compiler if later decided to change the machine. Moreover one of the
+main characteristics of intermediate representations is that they should
+resemble the original source language, in order to make the process of
+conversion between source and IR as easy as possible. Generating the machine
+code, should remain simple as well. Thus, translating the original source code
+first into the G-code and later to the machine of our choice shall be much
+simpler than doing it in a straightforward manner. The third argument for
+using an intermediate representation over a concrete one, is that it will
+enable creating virtual machine interpreters or compilers for any particular
+computer architecture, by means of only switching the code generator. Code
+generators will then need to transform the intermediate language into machine
+code of that machine. This will greatly simplify the development of such tools,
+because the issues of compiling supercombinators to sequential code and
+compiling to machine code will be clearly separated. Exploiting these facts
+made it possible for me to create two implementations of the G-machine:
 
 \begin{itemize}
   \item The first one, is a G-machine interpreter. It is particularly suited
@@ -2306,26 +2305,25 @@ implementations of the G-machine:
 
 \section{Graph reduction}
 \label{sec:graph_reduction}
-As previously stated the output of a syntax analyser is an Abstract Syntax
-Tree. In above chapters, a several transformations has been applied to the
-tree, in order to either compile special constructs like lambda abstractions or
-to translate the source of the program to enriched lambda calculus. Eventually
-the output of these transformations is still AST. \textit{Graph reduction} is
-an implementation of efficient, non-strict supercombinator evaluation strategy.
-Non-strictness in this context means that function arguments are evaluated on
-demand. This is also known as \textit{lazy evaluation}. Another feature of
-G-machine implementation is that values should only be evaluated once, in order
-not to repeat the same calculations over and over.
+As previously stated the output of a syntax analyser is an abstract syntax
+tree. In above chapters, a several transformations has been applied to the AST,
+in order to to translate the source of the program to enriched lambda calculus.
+Eventually the output of these transformations is still AST. \textit{Graph
+reduction} is an implementation of efficient, non-strict supercombinator
+evaluation strategy.  Non-strictness in this context means that function
+arguments are evaluated on demand. This is also known as \textit{lazy
+evaluation}. Another feature of lazy G-machine implementation is that values
+should be evaluated only once, in order not to repeat the same calculations
+over and over.
 
 \subsection{The Graph}
-The abstract syntax tree is transformed to a graph due to conversions that take
-place during graph reduction. Such graph is being stored in memory,
-specifically it is kept on the heap. The nodes of the graph are dynamically
-allocated on the heap. They contain a \textit{tag} that uniquely identifies the
-type of a node, as well as additinoal fields like values, in case of number
-nodes, or links (addresses) to other nodes in case of application nodes for
-instance. For example the abstract way of visualising application and number
-nodes might be like in the figure~\ref{fig:num_ap_nodes}:
+The abstract syntax tree is transformed into a graph by conversions that take
+place during graph reduction. Such graph is stored in memory. Nodes of that
+graph are dynamically allocated on the heap. They contain a \textit{tag} that
+uniquely identifies the type of a node, as well as additinoal fields like
+values, in case of number nodes, or links (addresses) to other nodes in case of
+application nodes. For example the abstract way of visualising application and
+number nodes might be like in the figure~\ref{fig:num_ap_nodes}:
 
 \vspace*{0.2in}
 \begin{figure}[h!]
@@ -2336,25 +2334,25 @@ nodes might be like in the figure~\ref{fig:num_ap_nodes}:
 \end{figure}
 
 \subsection{Evaluation Strategy}
-There are many possible evaluation strategies. Many imperative languages
-chooses to follow the \textit{innermost evaluation}. In this strategy the
-arguments to a function are evaluated before the function application. In Kivi,
-similarly as in other lazy functional languages the outermost redex is
-evaluated first, thus Kivi adapts the \textit{innermost evaluation strategy}.
-Function arguments are evaluated only in case it is absolutely needed, so
-function arguments that are not used in the body of function will never be
-evaluated, thus saving computations.
+There are few possible evaluation strategies. Many imperative languages choose
+to follow the \textit{innermost evaluation}. In this strategy the arguments to
+a function are evaluated before the function application. Kivi takes another
+approach, similar to other lazy functional languages, where the outermost redex
+is evaluated first. Thus, Kivi conforms to the \textit{outermost evaluation
+strategy}, where function arguments are evaluated only in case it is
+unavoidable. Function arguments that are not used in the body of function
+will never be evaluated, thus saving computations.
 
 In Kivi reduction starts by evaluating the body of \texttt{main}
-supercombinator. The process of reduction consist of transforming a graph
+supercombinator. The process of reduction consists of transforming a graph
 according to the specified rules and eventually arriving to the state where it
 cannot be reduced any more. Such state is called \textit{weak head normal form}
-(or WHNF for short). It is assumed, that an expression is in the WHNF in several
-cases. First of all, when it is a number, character, or any other simple data
-type it is considered to be in WHNF. Another situation where there is nothing
-more to reduce is if the expression is in ($f$ $e_1$ $e_2$ $\ldots$ $e_n$)
-form, where $f$ is lambda abstraction, built-in function or constructor and $n$
-is less or equal the expected number of arguments for $f$.
+(or \textit{WHNF} for short). It is assumed, that an expression is in the WHNF
+in several cases. First of all, when it is a number, character, or any other
+simple data type it is considered to be in WHNF. Another situation where there
+is nothing more to reduce is if the expression is in ($f$ $e_1$ $e_2$ $\ldots$
+$e_n$) form, where $f$ is lambda abstraction, built-in function or constructor
+and $n$ is less than the expected number of arguments for $f$.
 
 The process of evaluation can be described in four points:
 
@@ -2369,31 +2367,30 @@ The process of evaluation can be described in four points:
 The first step is to find the node of a graph where to perform the next
 reduction. As already mentioned, among all such nodes, the outermost one is
 selected. The most straightforward way to find it, is to follow the left
-branches of application nodes (as shown in Figure~\ref{fig:application_node})
-saving the traversed node addresses on the runtime stack. There are two cases
-when this process stops, either when the supercombinator or built-in function
-node is encountered.
+branches of application nodes saving the traversed node addresses on the
+run-time stack. There are two cases when this process is considered done, i.e.
+when the supercombinator or built-in function node is encountered.
 
 \subsection{Reduction}
 Reduction depends on the type of node the algorithm encountered. There are a
 few cases that might occur:
 
 \subsubsection{Reducing supercombinators}
-When supercombinator node is to be reducted, first thing what G-machine does,
-is to check whether there are enough arguments on the stack. If it is not the
+When supercombinator node is to be reduced, first thing that G-machine does, is
+to check whether there are enough arguments on the stack. If it is not the
 case, algorithm returns, as such application appears to be a \textit{partial
-application} forming a closure. On the other hand, if the number of arguments
-on the stack is greater or equal to the expected number the process continues.
-The arguments to a supercombinator consist of a set of right children of
-application nodes that has been visited during traversal\footnote{At this step,
-the \textit{rearrangement} of arguments takes place. This activity will be
-described in next chapters, but it is just an optimization so I am not going to
-introduce it right now, not to make unnecessary complications.}. The addresses
-that form the stack, are called \textit{spine} of the expression, and the
-process of following the left branches of application nodes is commonly known
-as \textit{unwinding} the spine. The reduction of a supercombinator can be
-seen as instantiating supercombinator's body, where formal parameters are
-substituted for arguments (as defined in Section 2.1.4 of \cite{JonLes00}).
+function application}. On the other hand, if the number of arguments on the
+stack is greater or equal to the expected number, the \textit{rearrangement} of
+arguments on the stack takes place. The arguments to a supercombinator consist
+of a set of right children of application nodes that has been visited during
+traversal. The addresses that form the stack, are called \textit{spine} of the
+expression, and the process of following the left branches of application nodes
+is commonly known as \textit{unwinding} the spine. Rearrangement is an
+optimization to substitute application nodes from the spine for its right
+children, so as to make the stack contain the real function arguments instead
+of pointers to them. The reduction of a supercombinator can be seen as
+instantiating supercombinator's body, where formal parameters are substituted
+for arguments (as defined in Section 2.1.4 of \cite{JonLes00}).
 
 \subsubsection{Reducing built-ins}
 It might be the case however that the outermost redex found is not a
@@ -2408,7 +2405,7 @@ evaluated. In such case, it saves the current stack again and performs another
 recursive invokation of itself. Dump therefore, is formed by putting stacks on
 each other, so it might be perceived as stack of stacks.
 
-This situation described above occurs when evaluating the expression \texttt{(1
+The situation described above occurs when evaluating the expression \texttt{(1
 + (sqr 2)) * 3}. The graph built for this expression will look like one in
 Figure~\ref{fig:expression_graph}, where inner nodes represented by black
 circles are application nodes.
@@ -2436,10 +2433,10 @@ the evaluation should be done only once. There is a need to introduce a new
 node type, called \textit{indirection node} in order to achieve this.
 Otherwise, the reduced node (result of computations) will have to be copied to
 the root of the redex. In case of that node not being fully evaluated it brings
-a risk of performing computations multiple times. Indirection nodes work like a
-pointer to other node, effectively making the machine to use the values
-computed last time redex was reduced. This will prevent it from performing the
-same calculations more than once.
+a risk of performing computations multiple times. Indirection nodes behave like
+pointers to other nodes, effectively making the machine use values computed
+before. This will prevent it from performing the same calculations more than
+once.
 
 %\subsection{Evaluation Example}
 %Example of evaluating expression (TODO: example expression) is presented
@@ -2460,8 +2457,8 @@ Compilation is a process of turning supercombinator body into a sequence of
 G-machine instructions. These instructions when executed will construct an
 instance of a supercombinator with formal parameters substituted with actual
 function arguments. When running a concrete program, consisting of
-supercombinator definitions, at first it will be translated into G-code, and this
-process may be seen as \textit{compile time}. Later G-code is going to be
+supercombinator definitions, firstly it will be translated into G-code, and this
+process may be regarded as \textit{compile time}. Later G-code is going to be
 executed on a virtual machine, the G-machine. The latter may be regarded as
 \textit{run time}.
 
@@ -2530,7 +2527,7 @@ After compiling it to G-machine instructions it will become:
 \end{code}
 
 The \texttt{Push n} instruction causes the \texttt{n}$^{th}$ value from the
-stack to be pushed to the top of stack. Simply put, it copies the
+stack to be pushed to the top of stack. In other words, it copies the
 \texttt{n}$^{th}$ argument. When the evaluation of supercombinator begins, the
 stack is rearranged so that function arguments are on the top of the stack.
 Thus \texttt{Push 0} will copy the first function argument to the top of the
@@ -2570,12 +2567,12 @@ type representing compiler is \texttt{GmCompiler} defined as below:
 \end{code}
 
 \texttt{GmEnvironment} is a data type for keeping associations between variable
-names and their offset from the stack top. So our compiler is expected to be
-perceived as a function that given the abstract syntax tree, as well as
+names and their offsets from the top of the stack. So our compiler is expected
+to be perceived as a function that given the abstract syntax tree, as well as
 environment produces G-machine instructions. Compilation process starts from
 \texttt{compile} function. It turns the abstract syntax tree of a program into
-an initial state prepared for either interpretation or further compilation (into
-LLVM intermediate representation, in case of Kivi):
+an initial state prepared for either interpretation or further compilation
+(into LLVM intermediate representation, in case of Kivi):
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -2600,12 +2597,12 @@ types that might occur on the heap are:
             | NMarked Node
 \end{code}
 
-whereas heap itself is a mapping from \texttt{Addr} to \texttt{Node}. The
+Heap itself, is a mapping from \texttt{Addr} to \texttt{Node}. The
 \texttt{NMarked} node type is used in garbage collector, see
 Section~\ref{sec:garbage_collection}, for details.
 
-In order to compile an expression compilation schemes are recursively applied
-in accordance to the type of expression. Look at the case when
+In order to compile an expression, compilation schemes are recursively applied
+in accordance to the type of expression. Consider the case when
 \texttt{compileC} compilation scheme is generating code for
 \texttt{EAp}\footnote{This expression type represents function applications.}
 expression:
@@ -2640,12 +2637,12 @@ Interpreter is defined as a program that executes instructions written in
 programming language. There is a variety of ways that interpreter can perform
 evaluation of a program. Kivi takes the approach of first compiling the source
 to intermediate language, called G-code, and later executing these
-instrutions.\footnote{Other ways may include, for example, directly executing
+instrutions\footnote{Other ways may include, for example, directly executing
 source code instructions}.
 
 The G-machine is a \textit{finite state machine}. It consists of finite number
 of states as well as transitions between these states. At every moment of
-G-machine execution the state can be described by following tuple:
+G-machine execution, the state can be described by the tuple:
 
 \subsection{State}
 The meaning of each element is summarized below:
@@ -2656,7 +2653,7 @@ The meaning of each element is summarized below:
     instructions. It is implemented as an instance of \texttt{GmCode}.
   \item \texttt{stack}, \texttt{GmStack} instance, implements the G-machine's runtime
     stack and keeps the spine of expression.
-  \item \texttt{dump}, described above, is a collection \texttt{GmDumpItems},
+  \item \texttt{dump}, described above, is a collection \texttt{GmDumpItem}s,
     where:
 
     \vspace*{0.2in}
@@ -2672,7 +2669,7 @@ The meaning of each element is summarized below:
     heap nodes for them.
   \item Supercombinator's graph is being kept on istance of type
     \texttt{GmHeap}.
-  \item \texttt{GmGlobals} contains global function and operator addresses that
+  \item \texttt{GmGlobals} contain global function and operator addresses that
     point to nodes on the heap
   \item \texttt{GmStats} is meant to save the statistics gathered during
     execution. It might be number of reductions, number of nodes allocated,
@@ -2682,9 +2679,9 @@ The meaning of each element is summarized below:
 
 Therefore the G-machine state is implemented as a 8-tuple in
 \textit{Common.hs}. This module contains also a variety of functions to both
-inspect or create new state on the basis of old one. When program execution
-begins, the \texttt{compile} function creates an \textit{initial} state with
-all elements set to default values:
+inspect and transform between states. When program execution begins, the
+\texttt{compile} function creates an \textit{initial} state with all elements
+set to default values:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -2709,8 +2706,8 @@ contains the logic of that specific instruction. In literature it is described
 as \textit{state transition rules}. Given current instruction from
 \texttt{code} as well as state, transition rules create new state where some of
 components are changed due to results of executing that instruction. For
-example, state transition for \texttt{Push n} instruction states, that the
-stack component of G-machine state should have its n$^{th}$ element copied to
+example, state transition for \texttt{Push n} instruction, causes the
+stack component of G-machine state to have its n$^{th}$ element copied to
 the top. Other elements should remain unchanged:
 
 \vspace*{0.2in}
@@ -2728,7 +2725,8 @@ The picture of fully deterministic finite automaton emerges, taking under
 assumption that for each instruction there exists only a unique transformation
 producing an updated state.
 
-The reader is advised to refer to \cite{Jon87} and \cite{JonLes00} for full
+The reader is advised to refer to the \textit{GmEvaluator.hs} and
+\textit{CodeGen.hs}, as well as \cite{Jon87} and \cite{JonLes00} for full
 description of every transition.
 
 \section{LLVM Code Generator}
@@ -2736,7 +2734,7 @@ description of every transition.
 Compilers usually consist of two parts called \textit{frontend} and
 \textit{backend}. The role of a frontend is to parse the source file, perform
 semantic analysis and emit the processed version of input program called
-\textit{intermediate representation} or \textit{IR} for short. Up to now I have
+\textit{intermediate representation} or \textit{IR} for short. Until now, I have
 described the frontend of Kivi compiler with G-code being its intermediate
 representation. The role of a backend on the other hand is to process the IR,
 optimize it, map values to machine registers and emit an assembly language as
@@ -2772,10 +2770,10 @@ Intermediate representation of LLVM provides an independent instruction set and
 type system. It aims to be a low-level and general enough, to make it an easy
 mapping for many high-level languages. The existence of type information,
 usually absent in low-level representations, makes it possible to perform a
-range of optimizations which otherwise will not be possible. Each instruction is
-in \textit{single static assignment} form, which means that every variable can
-be assigned only once and is not allowed to be modified later. Full description
-of LLVM IR instructions can be found at \url{http://llvm.org/docs/LangRef.html}.
+range of optimizations. Each instruction is in \textit{single static
+assignment} form, which means that every variable can be assigned only once and
+is not allowed to be modified later. Full description of LLVM IR instructions
+can be found at \cite{website:llvm_ir}.
 
 \subsection{Representing G-machine state}
 The LLVM G-machine implementation consists of similar parts as the previously
@@ -2785,11 +2783,11 @@ LLVM call stack. The more interresting bits are stack and heap that are
 described in the next sections.
 
 \subsubsection{Stack implementation}
-G-machine's stack is implemented in \textit{program.st}
-template that aims to provide the global declarations needed later. It is
-represented by a data area to hold the stack elements as well as the stack
-pointer. At each point of thof memorye program the stack pointer, \texttt{@sp} points to
-the top of the stack:
+G-machine's stack is implemented in \textit{program.st} template that aims to
+provide the global declarations needed later. It is represented by a data area
+to hold the stack elements as well as the stack pointer. At each point of
+program's execution the stack pointer(\texttt{@sp}) points to the top of the
+stack:
 
 \vspace*{0.2in}
 \begin{code}[style=assembler]
@@ -2893,22 +2891,22 @@ Until now I have discussed the building blocks of LLVM code generator, yet
 have not said anything about how translation from G-code instructions to LLVM IR
 really works. In this chapter I am going to fix that.
 
-LLVM code generator is implemented in \textit{CodeGen.hs} file. First, function
-\texttt{genLLVMIR} generates the intermediate representation which is later
-saved to file by \texttt{saveLLVMIR}. However the real heavy-lifting is done in
-\texttt{translateToLLVMIR} with the help of \textit{HStringTemplate} library
-(\cite{website:hstring_template}). It is reponsible for generating code chunks
-by feeding templates that reside in \texttt{templates/} directory with template
-parameters.
+LLVM code generator is implemented in \textit{CodeGen.hs} file. Firstly,
+function \texttt{genLLVMIR} generates the intermediate representation which is
+later saved to file by \texttt{saveLLVMIR}. However the real heavy-lifting is
+done in \texttt{translateToLLVMIR} with the help of \textit{HStringTemplate}
+library (\cite{website:hstring_template}). It is reponsible for generating code
+chunks by feeding templates that reside in \texttt{templates/} directory with
+template parameters.
 
 Code generator is called for each supercombinator and fetches its instructions.
 After that \texttt{translateToLLVM} folds over these instructions and pattern
-match on instruction type. For each of them there is a separate routine that
-seeks for the corresponding template and instantiate it with parameters
-substituted for G-code instruction arguments. Such filled supercombinator
-templates are gathered and injected into the program's global template which is
-saved to a file on a disk. As an example consider the code that instantiates a
-template for \texttt{Pushint n} instruction:
+matches on instruction's type. For each of them there is a separate routine
+that seeks for the corresponding template and instantiates it with G-code
+instruction arguments substituted for parameters. Supercombinator templates
+created this way, are gathered and injected into the program's global template
+which is saved to a file on a disk. As an example consider the code that
+instantiates a template for \texttt{Pushint n} instruction:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -2950,7 +2948,7 @@ problem is to find the correct moment for GC to run.
 
 \subsection{Mark and Sweep GC}
 Current approach that has been taken in Kivi's garbage collection is to
-implement a simple \textit{mark and sweep} algorithm. It is sources are
+implement a simple \textit{mark and sweep} algorithm. Its sources are
 available in the \textit{Gc.hs} file. In this kind of garbage collection
 strategy, each node on the heap, has an associated value that says, whether or
 not, the current node is used. This is the role of \texttt{NMarked} node
@@ -2986,7 +2984,7 @@ several parts:
     which wraps visited nodes with \texttt{NMarked} constructor.
   \item Finally, all memory is scanned from start to finish, examining all free
     or used blocks. Those without \texttt{NMarked} flag are not reachable
-    by any program or data, and their memory is reclaimed. For nodes which are
+    by any program data, and their memory is reclaimed. For nodes which are
     marked in-use, the flag is cleared again, preparing for the next
     cycle.
 \end{itemize}
