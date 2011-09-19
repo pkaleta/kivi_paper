@@ -1,10 +1,10 @@
 \documentclass[12pt,a4paper]{report}
-%\documentclass[a4paper]{report}
 \usepackage{alltt}
 \usepackage{listings}
 \usepackage{caption}
 \usepackage{url}
 \usepackage{amsthm}
+\usepackage{amsmath,calc}
 \usepackage{setspace}
 \usepackage{graphicx}
 \newtheorem{definition}{Definition}[chapter]
@@ -23,7 +23,7 @@
 
 \lstdefinelanguage{Haskell}
   {morekeywords={data, type, where, let, Just, Nothing, deriving, Show, letrec,
-  in},
+  in, case, if},
   sensitive=true,
   morecomment=[l]{--},
   morestring=[b]",
@@ -86,19 +86,20 @@
   Haskell, but beneath syntactic layer, it differs significantly. The code that
   Kivi generates, is the intermediate language of a compiler toolkit called
   \textit{Low Level Virtual Machine}\cite{website:llvm} or \textit{LLVM} for
-  short.  Later LLVM compiles and assembles the program into an executable.
-  Programs written in Kivi are therefore likely to gain run-time speed-ups due
-  to highly developed optimization mechanisms implemented in LLVM. Choosing
-  LLVM as a backend makes it easier to port programs to different architectures
-  as well.  Kivi is meant to form the basis of a future implementation of a
-  lazy language for concurrent programming, integrated with Erlang by means of
-  its distribution protocols.
+  short. LLVM compiles and assembles the program into an executable. Programs
+  written in Kivi are therefore likely to gain run-time speedup due to highly
+  developed optimization mechanisms implemented in LLVM. Choosing LLVM as a
+  backend makes it easier to port programs to different architectures as well.
+  Kivi is meant to form the basis of a future implementation of a lazy language
+  for concurrent programming, integrated with Erlang by means of its
+  distribution protocols.
 \end{abstract}
 
 \normalsize
 
 \pagenumbering{roman}
 \tableofcontents
+\newpage
 
 \pagenumbering{arabic}
 \chapter{Introduction}
@@ -106,21 +107,22 @@
 This paper describes the design and implementation of a lazy functional
 language compiler. The implementation is based on the
 \textit{G-machine}\cite{Jon87} and uses \textit{lazy graph reduction} to
-perform evaluation. Current compiler, attached to this thesis, is implemented
-in Haskell, however in future I'm planning to reimplement it using Kivi itself,
-thus exploiting a technique called \textit{bootstrapping} (see
-\cite{wiki:bootstrapping}).
+perform evaluation. Current compiler implementation, attached to this thesis,
+is implemented in Haskell, however in future I am planning to reimplement it
+using Kivi itself, thus exploiting a technique called \textit{bootstrapping}
+(see \cite{wiki:bootstrapping}).
 
 The compilation process is implemented as a set of passes that eventually
-transforms source code written in Kivi into a simple intermediate language
-, \textit{lambda calculus} enriched with let(rec) expressions. Choice to
+transform source code written in Kivi into a simple intermediate language,
+\textit{lambda calculus} enriched with let(rec) expressions. Choice to
 implement it by several passes was mainly motivated by readability concerns, as
 well as the will to make implementation and debugging as easy as possible.
 Another reason for this might be the fact that such separation made the
 compiler very modular and adding another pass should be done with minimal
 complexity.
 
-Following chapter presents the parsing mechanisms used in Kivi. It is a description
+\section{Overview of thesis}
+Next chapter presents the parsing mechanisms used in Kivi. It is a description
 of lexical and syntax analysers that translate code written in Kivi into an
 abstract construct, which is used throughout the whole futher compilation
 process.
@@ -144,12 +146,12 @@ code generator.
 
 \chapter{Parsing}
 
-In order to translate the source of \textit{Kivi} into \textit{Lambda Calculus}
-it has to be available in a structured form so thate next passes could easily
+In order to translate the source of Kivi into \textit{lambda calculus} it has
+to be available in a structured form so that subsequent passes could easily
 traverse it. \textit{Abstract Syntax Trees}\cite{ALSU07} has been widely
-adopted as a standard form of keeping the representation of source code in
-memory. The process of reading the input source file and producing AST from it
-is called \textit{parsing}.
+adopted as a form of keeping the representation of source code in memory. The
+process of reading the input source file and producing AST from it is called
+\textit{parsing}.
 
 I have chosen to implement a simple parser, in a similar manner as in
 \cite{JonLes00} as it seemed to be the simplest approach to me back then. Now, as
@@ -163,19 +165,19 @@ Parsing consists of two passes:
     \textit{Lexer.hs} module extracts \textit{tokens} from plain text.
     \textit{Tokenization} is the process of demarcating and possibly
     classifying sections of a string of input characters. The resulting tokens
-    are then passed on to further processing.
+    are then passed for further processing.
   \item \textit{Syntax analysis} is the process of analyzing the stream of
     tokens and building an \textit{Abstract Syntax Tree} from it.
 \end{itemize}
 
-This process is implemented as\footnote{Where \texttt{PatProgram} is a program
-that contains patterns}:
+This whole parser is implemented as\footnote{Where \texttt{PatProgram} is a
+program that contains patterns}:
 
 \vspace*{0.2in}
-  \begin{code}
-  parse :: String -> PatProgram
-  parse = syntax . lex
-  \end{code}
+\begin{code}[style=haskell]
+parse :: String -> PatProgram
+parse = syntax . lex
+\end{code}
 
 And can be seen as presented in Figure~\ref{fig:parser}.
 
@@ -192,7 +194,7 @@ And can be seen as presented in Figure~\ref{fig:parser}.
 The types for lexer are following:
 
 \vspace*{0.2in}
-\begin{code}
+\begin{code}[style=haskell]
 type Token = String
 type TokenInfo = (Int, Token)
 \end{code}
@@ -204,7 +206,7 @@ classifying the parts of remaining input based on first characters.  Building
 number tokens may be a nice example of how it works:
 
 \vspace*{0.2in}
-\begin{code}[label=lst:lex_comment,caption={Building tokens from numbers.}]
+\begin{code}[style=haskell,label=lst:lex_comment,caption={Building tokens from numbers.}]
 lex' (c : cs) lnum | isDigit c =
     (lnum, numToken) : lex' restCs lnum
     where
@@ -215,23 +217,23 @@ lex' (c : cs) lnum | isDigit c =
 
 \section{Syntax analysis}
 \label{sec:syntax_analysis}
-Once lexer is capable of emitting tokens, it is time to convert it into a
-hierarchical structure called \textit{Abstract Syntax Tree} (or \textit{AST}
-for short). Abstract syntax trees are tree representations of abstract
-syntactic structures written in programming language. Nodes in such tree
-represent different constructs from the source code. The word abstract is used
-because not every detail from source code has its corresponding piece in AST,
-some unnecessary details are ommited.
+Once lexer is capable of emitting tokens, it becomes viable to convert them
+into a hierarchical structure called \textit{Abstract Syntax Tree} (or
+\textit{AST} for short). Abstract syntax trees are tree representations of
+abstract syntactic structures written in programming language. Nodes in such
+tree represent different constructs from the source code. The word abstract is
+used because not every detail from source code has its corresponding piece in
+AST, some unnecessary details are omitted.
 
 Data type for representing Kivi's abstract syntax trees is defined in
 \textit{Common.hs} module and is a parametrized data type. This concept is
 similar to templates in C++ or generics in Java. It allows the code to be
-reused and is an important ingredient in \textit{parametric poylmorphism}, the
+reused and is an important ingredient of \textit{parametric poylmorphism}, the
 way that Haskell achieves polymorphism (see
 \cite{website:parametric_polymorphism}). The data type definition is following:
 
 \vspace*{0.2in}
-\begin{code}
+\begin{code}[style=haskell]
 data Expr a = EVar Name
             | ENum Int
             | EChar Int
@@ -247,15 +249,15 @@ data Expr a = EVar Name
             | ESelect Int Int Name
 \end{code}
 
-The \texttt{Expr} data type is parametrized with respect to its binders.
-Binders, as name suggests, are used when the variable is bound to a value. This
-happens in lambda abstractions, let and letrec definitions as well as in
-case expressions. To give an example of how a simple source code
-construct will look like, when parsed to AST, consider the following
-snippet of code:
+The \texttt{Expr} data type is parametrized with respect to its
+\textit{binders}. Binders, as name suggests, are used when the variable is
+bound to a value. This happens in lambda abstractions, let and letrec
+definitions as well as in case expressions. To give an example of how a simple
+source code construct will look like, when parsed to AST, consider the
+following snippet of code:
 
 \vspace*{0.2in}
-\begin{code}
+\begin{code}[style=haskell]
 let
     x = 1;
     y = 2
@@ -269,32 +271,31 @@ with patterns. However in order to grasp the concept of parametrized
 \texttt{Expr} type its easier to forget about that fact for a while.}:
 
 \vspace*{0.2in}
-\begin{code}
+\begin{code}[style=haskell]
   ELet False
-       [('x', ENum 1), ('y', ENum 2)]
-       EAp (EAp (EVar '+') (EVar 'x')) (EVar 'y')
+       [("x", ENum 1), ("y", ENum 2)]
+       EAp (EAp (EVar "+") (EVar "x")) (EVar "y")
 \end{code}
 
-Defining expressions in this way makes the code way more concise. For example,
+Defining expressions in this way makes the code much more concise. For example,
 initially parser returns programs with patterns in them, but later phases of
 compilation process gets rid of them by transforming program into a
 representation that uses \texttt{case} expressions instead. Thanks to
-parametrized definition of \texttt{Expr} data type, it is possible to define
-parse as function that returns \texttt{Expr Pattern}, whereas subsequent phases
-return \texttt{Expr String}.
+parametrized definition of \texttt{Expr} data type, it is feasible to define
+\texttt{parse} as function that returns \texttt{Expr Pattern}, whereas
+subsequent phases return \texttt{Expr String}.
 
 
 \chapter{Translation to Lambda Calculus}
 
 In this chapter I am going to present the process of transforming a high-level
-functional language into a simple intermediate form called \textit{lambda calculus}.
-In the first part I will show \textit{Kivi}'s syntax, its constructs and
-structures. Later on, the desired output form, \textit{Lambda Calculus} will be
-shown. The rest of the chapter will focus on methods to translate the first form
-into another.
+functional language into a simple intermediate form called \textit{lambda
+calculus}. In the first part I will show Kivi's syntax, its constructs and
+structures. The rest of the chapter will focus on mechanisms to translate the
+first form into another.
 
 \section{Syntax}
-Sources of Kivi programs consist of set of
+Source of Kivi program consist of set of
 \textit{supercombinators}\cite{wiki:supercombinator}. Supercombinator is an
 expression consisting of either constants or other supercombinators and does
 not contain any free variables (see Definition~\ref{def:free_variable}) in its
@@ -308,17 +309,17 @@ argument, calculating square of a given number.
 sqr x = x * x
 \end{code}
 
-There exists one distinguished supercombinator called \textit{main}, that takes
-no arguments. It is the entry point for program execution. If there is no main
-CAF present in Kivi's source, both compiler and interpreter should issue a
-specific error message.
+In every program, there should exist one distinguished supercombinator called
+\textit{main}, that takes no arguments. It is the entry point for program
+execution. If there is no main CAF present in Kivi's source, both compiler and
+interpreter should issue a specific error message.
 
 \subsection{Case expressions}
 The purpose of case expressions is to allow the programmer to control the flow
 of program execution via a multiway branch. The semantics of case is rather
-simple. First, the expression under case is evaluated and then, based on result,
-the appriopriate execution path is chosen. Example of case expression is
-presented in Listing~\ref{lst:case_expression}.
+simple. First, the expression after case keyword is evaluated and then, based
+on result, the appriopriate execution path is chosen. Example of case
+expression is presented in Listing~\ref{lst:case_expression}.
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lst:case_expression,caption={Fibonacci with case}]
@@ -334,13 +335,13 @@ main = fib 10
 \subsection{If expressions}
 Reason for if expressions to exist, is to make the life easier for programmers
 coming from imperative languages, for if expressions can be implemented using
-case ones, without changing its semantics, and this is the recommended
-approach.  In fact what Kivi does under the hood is to translate if to case.
-What is different from most imperative languages, is the fact that ifs are
-expressions, not statements, therefore they return a value. If expressions
-takes an expression that should evaluate to boolean value, as well as two
-expressions that are returned if the value under test is true or
-false:
+case ones, without changing their semantics. Actually, it is the recommended
+approach. In fact what Kivi does under the hood is to translate if expressions
+into ones involving case.  What is different from most imperative languages, is
+the fact that ifs are expressions, not statements, therefore they return a
+value. If expressions takes an expression that should evaluate to boolean
+value, as well as two expressions that are returned if the value under test is
+true or false:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lst:if_expression,caption={Fibonacci with case}]
@@ -396,24 +397,24 @@ main = fac 5
 \end{code}
 
 \subsection{Lambda abstractions}
-Functions in Kivi can be defined in two ways. The first one is the top level
-supercombinators that has already been discussed. The other option is to define
-them as \textit{lambda abstractions}. This concept is similar to \textit{anonymous
+Functions in Kivi can be defined in two ways. The first one is to create them
+as top level supercombinators. The other method is to define them as
+\textit{lambda abstractions}. This concept is similar to \textit{anonymous
 functions} used in imperative languages. The syntax for defining lambda
 abstractions is presented in Listing~\ref{lambda_ex}.
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lambda_ex,caption={Lambda abstraction}]
-f = (\x . x * 2) 42
+f y = (\x . x * y) 42
 \end{code}
 
-In this example the lambda abstraction which doubles the arguments value is
-created and then applied to 42 yielding 84 as result.
+In this example a lambda abstraction which takes an \texttt{x} as argument and
+multiplies it by \texttt{y} is created and then applied to 42.
 
 During compilation process programs containing lambda abstractions are
-transformed into their equivalents with lambda abstractions substituted for top
-level supercombinators. This process is called \textit{lambda lifting} and is
-described in more detail in chapter~\ref{sec:lambda_lifting}.
+transformed into their equivalents, where top level supercombinators are
+substituted for lambda abstractions. This process is called \textit{lambda
+lifting} and is described in more detail in chapter~\ref{sec:lambda_lifting}.
 
 \subsection{Pattern matching}
 
@@ -424,8 +425,8 @@ recognize values, bind variables to those values and break structures down into
 parts.
 Patterns are matched in order they are defined in source code. Once a
 successful branch is found, the right-hand-side expression is evaluated and
-result returned. None of the following patterns is checked. If after checking
-all patterns it turns out that none of them matches the argument, the error is
+result is returned. None of the following patterns is checked. If after checking
+all patterns it turns out that none of them matches the argument, an error is
 returned.
 
 \vspace*{0.2in}
@@ -436,18 +437,19 @@ fac n = n * fac (n - 1)
 
 In Listing~\ref{pattern_matching_ex} a recursive supercombinator \texttt{fac}
 calculating factorial is defined. There are two cases\footnote{To be honest
-there are three cases, but for simplicity reasons we assume that
-\texttt{fac} is called only for non-negative integers}. Either the
-argument is 0 and then the result is 1, or argument is other than than 0 and
-then we progress recursively. The factorial definition is expressed very
-clearly by means of pattern matching.
-Pattern matching is also very useful when it comes to dealing with data
-types as we will see in next section.
+there are three cases, but for simplicity reasons it is assumed that
+\texttt{fac} is called only for non-negative integers}. Either the argument is
+equal to 0 and then 1 is returned or argument is a value other than 0 and in
+such case the program will progress recursively. The factorial definition is
+expressed very clearly by means of pattern matching. Pattern matching is also
+very useful when dealing with structured data types becomes an issue, as we
+will see in next section.
 
 \subsection{Structured Data Types}
-Data types in Kivi are defined using \texttt{data} keyword, giving the name of
-new type as well as its constructors and arities. Together with pattern matching they
-provide a very powerful mechanism for dealing with structured entities.
+Data types in Kivi are defined using \texttt{data} keyword, providing the name
+of new type, as well as its constructors and their arities. Together with
+pattern matching they provide a very powerful mechanism for dealing with
+structured entities.
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=data_type_ex,caption={Calculating length of list.}]
@@ -457,20 +459,20 @@ length Nil = 0;
 length (Cons x xs) = 1 + length xs
 \end{code}
 
-In Listing~\ref{data_type_ex} a data type \texttt{List} is declared as well as
-supercombinator calculating the length of a list by means of pattern matching.
-In first case argument is pattern matched to the \texttt{Nil} constructor. If
-matching succeeds it means that the list is empty, therefore its length is 0.
-In next case the argument is matched to second \texttt{List} constructor, that
-is \texttt{Cons}. If argument matches, the \textit{tail} of the list is bound to
-\texttt{xs} variable and right hand side of that branch is evaluated.
+In Listing~\ref{data_type_ex} a data type \texttt{List} is declared, as well as
+a supercombinator calculating the length of a list by means of pattern
+matching. In first case argument is pattern matched to the \texttt{Nil}
+constructor. If matching succeeds it means that the list is empty, therefore
+its length is 0.  In next case the argument is matched to second \texttt{List}
+constructor, that is \texttt{Cons}. If argument matches, the \textit{tail} of
+the list is bound to \texttt{xs} variable and right hand side of that branch is
+evaluated.
 
 \subsection{Partial function application}
-It is possible to create \textit{partial function applications} also known as
-\textit{currying}. It means that supplying an argument to a function, yields
-another function of smaller arity. Given a function $f : A \times B \rightarrow
-D$ and fixing the first argument creates a function $f : B \rightarrow C$. An
-example is presented below:
+It is possible to create \textit{partial function applications}. It means that
+supplying an argument to a function, yields another function of smaller arity.
+Given a function $f : A \times B \rightarrow D$ and fixing the first argument
+creates the function $f' : B \rightarrow C$. An example is presented below:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,caption={Partial application of addition.}]
@@ -482,11 +484,11 @@ main = add3 4
 \section{Translation to Lambda Calculus}
 The process of translating a high-level functional language to \textit{lambda
 calculus} might be considered as a set of program transformations. Each such
-transformation is meant to simplify \footnote{or help with further
+transformation is meant to simplify\footnote{or help with further
 transformations} the program given as its input, eventually leading to the
 expected \textit{enriched lambda calculus} form. All these transformations
 accept one form of program as input and yield the transformed program as
-output. We might, therefore, regard the compilation process as a function
+output. Compilation process therefore, might be perceived as function
 composition of all transformations. This is exactly the way the compilation is
 implemented in Kivi, and Haskell provides means to express this in a very
 concise way:
@@ -506,7 +508,7 @@ run = showResults
     . parse
 \end{code}
 
-We have already discussed parsing in previous chapters, so in the following
+Parsing has already been discussed in previous chapters, so in the following
 sections I am going to provide a description of all remaining phases.
 
 \section{Structured Data Types and Tagging}
@@ -541,25 +543,25 @@ Branch (Leaf 1) (Branch (Leaf 2) (Leaf 3))
 \end{figure}
 
 Constructors are used not only for object creation but also for decomposition
-into parts as well as distinguishing the different types of trees based on
-constructor. This feature is heavily used when pattern matching. For example
-the code in Listing~\ref{lst:sqr_tree} uses it to create a new tree with values
-that are square roots of values in original tree.
+into parts, as well as distinguishing between different types of data. This
+feature is heavily used when pattern matching. For example the code in
+Listing~\ref{lst:sqr_tree} exploits this characteristic in order to create a
+new tree with values that are squares of values in original tree.
 
 \vspace*{0.2in}
-\begin{code}[label=lst:sqr_tree,caption={Creating a `square rooted` tree.}]
+\begin{code}[style=haskell,label=lst:sqr_tree,caption={Creating a `square rooted` tree.}]
 sqrTree (Leaf v) = Leaf (v * v)
 sqrTree (Branch t1 t2) = Branch (sqrTree t1) (sqrTree t2)
 \end{code}
 
 \subsection{Built-in Data Types}
 There are few types that are considered built-ins. These are lists, tuples,
-and booleans. The ability to think of these common concepts in functional
-programming as Structured Data Types makes the implementation straightforward
-as I did not have to treat these entities separately, instead I used a common
-notion of data types.
+and booleans. The ability to think of these common, functional programming
+concepts as structured data types, made the implementation straightforward,
+for I did not have to treat these entities separately. Instead I used a common
+notion of data type.
 \subsubsection{Booleans}
-Boolean values in Kivi are implemented as a regular Structured Data Type having
+Boolean values in Kivi are implemented as a regular structured data type having
 two constructors representing true and false:
 
 \vspace*{0.2in}
@@ -568,23 +570,22 @@ data Boolean = True | False
 \end{code}
 
 \subsubsection{Lists}
-Lists are structures that allow storing a number of items. They
-provide a set of operations on them that allowing to create other
-lists\footnote{In Kivi lists as well as other types are immutable, which means
-that you cannot modify its contents. Instead you create new values which may
-differ from previous ones. }
-Kivi provides a variety of way to define a list. First of all lists can be seen
-as regular Data Type. Thus there are two constructors for a \texttt{List}
-data type. \texttt{Nil} and \texttt{Cons}:
+Lists are structures that allow storing a number of items. Kivi also provides a
+set of operations for obtaining a modified lists given original ones. Lists in
+Kivi, among other types, are considered immutable. This means that you cannot
+modify their contents. Instead you create new values which may differ from
+previous ones. There are few different ways to define a list. First of all,
+because \texttt{List} is a regular data type, there are two constructors:
+\texttt{Nil} and \texttt{Cons}:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
 data List = Nil 0 | Cons 2
 \end{code}
 
-\texttt{Nil} instantiates an empty \texttt{List} whereas \texttt{Cons} is meant
-to \textit{construct} \texttt{List} given two elements: the \textit{head} and
-\textit{tail}. List are recursive structures, thus \textit{tail} is another
+\texttt{Nil} instantiates an empty \texttt{List}, whereas \texttt{Cons} is
+meant to \textit{construct} \texttt{List} given two elements: the \textit{head}
+and \textit{tail}. List are recursive structures, thus \textit{tail} is another
 list.
 
 It turns out that creating a \texttt{List} is a task that occurs very often in
@@ -604,9 +605,9 @@ and Kivi does it too:
 [1, 2, 3, 4]
 \end{code}
 
-The same thing concern constructing lists given two elements. Kivi provides
-`:`(colon) as construction operator for \texttt{List} type, so the programmer
-would write:
+The same thing concern adding element to the front of the list. Kivi provides
+':'(colon) as construction (also known as \textit{cons}) operator for
+\texttt{List} type, so the programmer would write:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -630,18 +631,19 @@ programmer knows in advance how many elements will he need to store.
 There is a predefined number of tuple types that you can create, and currently
 the bound is set to 4. This means that programmer is not allowed to create
 tuples that contain more than 4 elements. This design decision is due to the
-fact that from my perspective it is better to use custom structured data type
-for readability reasons. The limit of 4 however, is an experimental value and
-might be changed.
+fact that from my perspective, it is better to define a custom structured data
+type, than have to deal with n-element tuples. The value of the limit itself,
+is an experimental value and might be changed in future.
 
-This all means that tuples with different number of elements are different
-types. Therefore there is no such thing as generic `Tuple` type. There are
-however \texttt{Tuple0}, \texttt{Tuple1}, \ldots etc., representing tuples with
-0 elements, 1 element, \ldots etc.
+Altogether it means, that tuples with different number or different types of
+elements are represented by different types. Therefore the notion of generic
+tuple type does not exist. There are however constructors \texttt{Tuple0},
+\texttt{Tuple1}, \ldots, etc. allowing to create tuples with 0, 1, \ldots
+elements etc.
 
-There are two ways to create a tuple either by using constructors or by a
-special \textit{syntactic sugar} construct, similarly as in the case for lists.
-These two ways for instantiating a 3-element tuple are equivalent, with the
+There are two ways to create a tuple, either by using constructors or by a
+special \textit{syntactic sugar} construct, similarly as in the case of lists.
+These two ways of instantiating a 3-element tuple are equivalent, with the
 preference for the second one, due to readability concerns:
 
 \vspace*{0.2in}
@@ -657,10 +659,10 @@ and
 \end{code}
 
 \subsection{Implementation and tagging}
-Internally each data type consist of a list of constructors, each containing a
+Internally each data type consists of a list of constructors, each containing
 \textit{tag}, and \textit{arity}. Constructor tags should uniquely identify
-each constructor therefore each tag should be different. The definitions
-for \texttt{DataType} and \texttt{Constructor} type synonyms, as in
+each constructor, therefore each tag should be different. The definitions of
+\texttt{DataType} and \texttt{Constructor} that can be found in
 \textit{Common.hs} are as follows:
 
 \vspace*{0.2in}
@@ -669,32 +671,32 @@ type DataType = (Name, [Constructor])
 type Constructor = (Name, Int, Int)
 \end{code}
 
-Because of the fact that there is no way to know in advance how many data type
-declarations are there in source file I had to devise some way to assign a
-unique tag for each of constructors that is not a built-in one. This is
-precisely what the tagging phase is for. It works in two parts:
+Because of the fact that there is no way of knowing in advance how many data
+type declarations there are in a source file, the need for a way of assigning
+unique tags for each constructor that is not a built-in one, had arisen.  This
+is precisely what the tagging phase stands for. It works in two parts:
 
 \begin{itemize}
-  \item First it traverses the list of data types and its constructors in order
-    to create a mapping between constructor name and its unique tag.
-  \item Next the whole AST is recursively traversed and each
-    \texttt{EConstrName} node is substituted for \texttt{EConstr} containing
-    the previously associated tag and arity.
+  \item At first the lists of data types and its constructors are traversed, in
+    order to create a mapping between constructor name and the unique tag.
+  \item Next, whole AST is recursively traversed and each \texttt{EConstrName}
+    node is substituted with \texttt{EConstr} containing the previously
+    associated tag and arity.
 \end{itemize}
 
 The definitions for those functionalities has been placed in
 \textit{AbstractDataTypes.hs} file. This module also contains functionalities
-responsible for querying constructors for tags, names, arities as well as
+responsible for querying constructors for tags, names and arities, as well as
 finding constructors given the \texttt{DataType} instance.
 
 
 \section{Pattern Matching}
-This section describes the details and motivation behing pattern matching as
-well as describes details of algorithms that transform high-level pattern
-matching constructs into enriched lambda calculus.
+This section describes the details and motivation behind pattern matching, as
+well as presents algorithms that transform high-level pattern matching
+constructs into enriched lambda calculus.
 
 \vspace*{0.2in}
-\begin{code}[style=haskell,label=lst:length,caption={Calculating length of list.}]
+\begin{code}[style=haskell,label=lst:length,caption={Calculating length of a list.}]
 length [] = 0;
 length (x : xs) = length xs + 1
 
@@ -702,37 +704,29 @@ length Nil = 0;
 length (Cons x xs) = length xs + 1
 \end{code}
 
-Listing~\ref{lst:length} reminds the already well known function for
-calculating the length of a list, and also presents the version of the same
-function but without \textit{syntactic sugar}. For the purpose of further
-discussion lets assume that we are calculating the length of 3-element list:
+Listing~\ref{lst:length} reminds the already well known function that
+calculates the length of a list, as well as the version of the same function,
+with \textit{syntax sugar} removed. For the purpose of further discussion,
+assume that the length of 3-element list, defined as \texttt{[1, 2, 3]}, which
+is essentially the same as \texttt{Cons 1 (Cons 2 (Cons 3 Nil))}, is
+calculated.
 
-\vspace*{0.2in}
-\begin{code}[style=haskell]
-[1, 2, 3]
-\end{code}
+The way that pattern matching compiler works, is that when \texttt{length} is
+applied to an expression it might not be evaluated yet, so in order to proceed
+it has to evaluate the function argument. Once it is done, compiler checks
+whether the argument matches the \texttt{Nil} constructor. This is not the case, so
+the compiler proceeds further, and matches against the second branch. This time it
+succeeds, \texttt{x} is bound to \texttt{1} and \texttt{xs} is bound to
+\texttt{[2, 3]}.
 
-which is the same as:
-
-\vspace*{0.2in}
-\begin{code}[style=haskell]
-Cons 1 (Cons 2 (Cons 3 Nil))
-\end{code}
-
-The way the pattern matching compiler works, is that when length is applied to
-an expression it might be not evaluated yet, so in order to proceed we have to
-evaluate the function argument. Next, compiler checks whether argument is a Nil
-constructor. This is not the case so compiler proceeds to checking against the
-second branch. This time it succeeds and \texttt{x} is bound to \texttt{1} and
-\texttt{xs} is bound to \texttt{[2, 3]}. The left-hand-sides of function
-equations are called \textit{patterns}. They can consist of constructors,
-variables, numbers, single characters and strings\footnote{Both the built-in
-ones as well as those defined by programmer.}. In previous example we have seen
-the combination of those, i.e. The pattern was composed of constructors and
-variables. Nothing prevents programmer from creating the so called
-\textit{nested patterns}. Example of such situation is present in
-Listing~\ref{lst:second_element}, where the function is extracting the second
-element from the list.
+The left-hand-sides of function equations are called \textit{patterns}. They
+can consist of constructors, variables, numbers, single characters and
+strings\footnote{Both the built-in ones as well as those defined by
+programmer.}. Previous example consisted of combination of these, i.e. the
+pattern was composed of constructors and variables as well. Nothing prevents
+programmer from creating the so called \textit{nested patterns}. Example of
+such situation occurs in Listing~\ref{lst:second_element}, where the
+second element of the list is extracted.
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lst:second_element,caption={Greatest common divisor.}]
@@ -741,10 +735,9 @@ second [x] = 0;
 second (x1 : (x2 : xs)) = x2
 \end{code}
 
-Patterns in the previous example were not \textit{overlapping}. It
-means that changing the order of function equations would not alter the
-behaviour of the function. The situation changes when we look at example
-presented in Listing~\ref{lst:gcd}.
+Patterns in the previous example were not \textit{overlapping}. It means that
+changing the order of function equations would not alter the behaviour of the
+function. The situation changes on example presented in Listing~\ref{lst:gcd}.
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lst:gcd,caption={Greatest common divisor.}]
@@ -752,19 +745,21 @@ gcd a 0 = a;
 gcd a b = gcd b (b % a)
 \end{code}
 
-Here if we have changed the order of equations, the function will never terminate
+Here, if the order of equations has changed, the function will never terminate,
 because the first clause would always match. This kind of patterns are called
 \textit{overlapping patterns}.
 
-Pattern matching can occur not only in function equations but also in source
-code constructs. It can be used in \texttt{case} expressions as well as in
-let and letrec bindings. Examples of those two pattern
-matching uses are presented in Listing~\ref{lst:case_pattern_matching} and
-~\ref{lst:letrec_pattern_matching}.  Making pattern matching available in
-let(rec)s at first sight might look like very similar to other constructs. In
-reality, however, it requires quite a complicated additional pass that
-transform let(rec)s into more suitable form.  This transformation is described
-in more detail in Section~\ref{sec:letrec_transform}.
+Pattern matching can occur not only in function equations but also in
+expressions defining supercombinator bodies. It might be used in \texttt{case}
+expressions, as well as in let and letrec bindings. Examples of these two
+pattern matching uses are presented in Listing~\ref{lst:case_pattern_matching}
+and ~\ref{lst:letrec_pattern_matching}.
+
+Making pattern matching available in let(rec)s, at first sight might seem very
+similar to implementing it for other language constructs. In reality however,
+it requires quite a complicated additional pass that transform let(rec)s into
+a more suitable form. This transformation is described in more detail in
+Section~\ref{sec:letrec_transform}.
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lst:case_pattern_matching,caption={Pattern matching in
@@ -786,10 +781,10 @@ in
 \end{code}
 
 \subsection{Compiling Pattern Matching}
-The simplest way to think of pattern matching is to match expression with first
-pattern and in case it does not match, try the following patterns. Within each
+The easiest way to percieve pattern matching is to try to match expression with
+the first pattern and in case it fails, try the following ones. Within each
 equation patterns are tested from left to right\footnote{In case of functions
-with multiple patterns}. Lets consider an example of \texttt{map} function from
+with multiple patterns}. Consider the example of \texttt{map} function from
 Listing~\ref{lst:map}.
 
 \vspace*{0.2in}
@@ -800,8 +795,8 @@ map f (x : xs) = ((f x) : (map f xs));
 main = map (\x . x * x) [1, 2, 3, 4, 5]
 \end{code}
 
-The \texttt{map} function returns a list constructed by appling a function
-\texttt{f} to all items in a list passed as the second argument. What our
+The \texttt{map} function returns a list constructed by applying a function
+\texttt{f} to every item from list passed as the second argument. What our
 mental model of pattern matching will do when evaluating the \texttt{main}
 function, is that it will first try to match the \texttt{(\textbackslash x . x
 * x)} lambda abstraction with \texttt{f} variable which will succeed. Matching
@@ -809,60 +804,65 @@ any expression to variable will result in success. Then the list \texttt{[1, 2,
 3, 4, 5]} will be matched against an empty list - \texttt{[]} and it will fail.
 In this situation, according to our simple strategy the algorithm will try to
 match the second equation. So it will again try to match the lambda abstraction
-with \texttt{f} variable pattern. As we can observe evaluation according to the
-simple algorithm might result in redundant computations, and in case of more
-complicated patterns it might be a substantial drawback. In order to be able to
-perform pattern matching in more optimized fashion we have to transform into
-the following form:
+with \texttt{f} variable pattern. As an attentive reader will notice,
+performing pattern matching according to this simple algorithm might result in
+redundant computations, and in case of more complicated patterns it might be a
+substantial drawback. In order to be able to perform pattern matching in a more
+optimized fashion, a transformation is required. Since a variable pattern
+conforms to any valid language expression, it seems feasible not to perform
+pattern matching for \texttt{f} at all, yielding the following code for
+\texttt{map} function:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
-map = $\lambda$f.$\lambda$xs.
+map = \f xs .
     case xs of
         Nil       -> Nil
         Cons y ys -> Cons (f y) (map f ys)
 \end{code}
 
-The remaining part of this section contains a description of an algorithm that
-is capable of transforming pattern matching into the form that uses case
-expressions instead of \textit{pattern-matching lambda abstractions}, thus allowing to
-compile patterns more efficiently. In order to see a more detailed analysis
-refer to Chapters 4 and 5 of \cite{Jon87}.
+Code in the listing above will perform better, and the remaining part of this
+section contains a description of an algorithm that is capable of transforming
+pattern matching into the form that uses case expressions instead of
+\textit{pattern-matching lambda abstractions}, thus producing code that
+performs pattern matching more efficiently. In order to see a more detailed
+analysis refer to the source code attached to this thesis, as well as Chapters
+4 and 5 of \cite{Jon87}.
 
 \subsection{Pattern-matching Lambda Abstractions}
-In lambda calculus, regular lambda abstraction is an expression of the
-following form:
+In lambda calculus, regular lambda abstraction is an expression of the form:
 
-\vspace*{0.2in}
-\begin{code}[style=haskell,mathescape=true]
-$\lambda x.t$
-\end{code}
+\vspace{-0.2in}
+\begin{align*}
+\lambda x.t
+\end{align*}
 
 where \textit{x} represents a \textit{variable} and \textit{t} stands for
 \textit{term}. Intuitively, a lambda abstraction is an anonymous function that
 takes a single input, and the \(\lambda\) is said to bind \textit{x} in
-\textit{t}, and an application \textit{ts} represents the application of input
-\textit{s} to some function \textit{t}. In the lambda calculus, functions are
-taken to be first class values, so functions may be used as the inputs to other
-functions, and functions may return functions as their outputs.
+\textit{t}. Term \textit{ts} represents the application of input \textit{s} to
+some function \textit{t}. In lambda calculus, functions are first class values,
+which means that they may be used as an input for other functions, as well as
+they might return functions as their outputs.
 
-The difference between regular and pattern-matching lambda abstractions lies in
-a fact that instead of variable $x$ on the left side a pattern might be
-used. So it might look like that:
+The difference between regular and pattern-matching lambda abstractions is the
+fact that instead of variable $x$ on the left side, a pattern might be used.
+Thus, the above construct is:
 
-\vspace*{0.2in}
-\begin{code}[style=haskell,mathescape=true]
-$\lambda p.t$
-\end{code}
+\vspace{-0.2in}
+\begin{align*}
+\lambda p.t
+\end{align*}
 
-where $p$ is a pattern\footnote{Variable is also considered as a
-pattern, so regular lambda abstractions form a subset of pattern-matching ones.}
+
+where $p$ is a pattern\footnote{Variable is also considered a pattern, so
+regular lambda abstractions is a subset of pattern-matching ones.}
 
 \subsection{Free variables}
 \label{sec:free_variable}
 
-For the purpose of further deliberations I will present the definition of
-\textit{free variables}:
+For the purpose of further deliberations the definition of \textit{free
+variable} is required:
 \begin{definition}
   \label{def:free_variable}
   A free variable is a notation that specifies places in an expression where
@@ -872,36 +872,36 @@ For the purpose of further deliberations I will present the definition of
 \end{definition}
 
 In computer programming, a free variable is a variable referred to in a
-function that is not a local variable nor an argument of that function:
+function that is not a local variable nor an argument of that function
 
 \subsection{Translating function equations to pattern-matching lambda
 abstractions}
-For the purpose of further explanations lets consider the following function
-definition:
+Consider the following function that will be used as an example in further
+deliberations:
 
-\vspace*{0.2in}
-\begin{code}[style=haskell,mathescape=true]
-$f\:p_{1} = e_{1}$
-$f\:p_{2} = e_{2}$
-   $\vdots$
-$f\:p_{n} = e_{n}$
-\end{code}
+\vspace{-0.2in}
+\begin{align*}
+f p_{1} &= e_{1}\\
+f p_{2} &= e_{2}\\
+        &\mathrel{\makebox[\widthof{=}]{\vdots}} \\
+f p_{n} &= e_{n}
+\end{align*}
 
-The pattern matching will be executed from top to bottom until some of them
-matches or none of them matches. In the first situation the value of an
-expression on the right hand side of matched pattern should be returned and
-none of the following patterns should be matched against. In the second one an
-error should be reported that no matching branch was found. With this in mind
-we can translate the definition of $f$ into following one:
+The pattern matching will be executed from top to bottom until a matching
+pattern is found or the algorithm runs out of patterns. In first situation, the
+value of an expression on the right hand side of matched pattern should be
+returned and none of the following patterns should be matched. On the other
+hand if none of patterns match, an error should be reported. With this in mind,
+it is possible to translate the definition of $f$ into following one:
 
-\vspace*{0.2in}
-\begin{code}[style=haskell,mathescape=true]
-f = $\lambda$x.((($\lambda p_{1}'$.$e_{1}'$) x) []
-        (($\lambda p_{2}'$.$e_{2}'$) x) []
-              $\vdots$
-        (($\lambda p_{n}'$.$e_{n}'$) x) []
+\vspace{-0.2in}
+\begin{align*}
+f = \lambda x.(((\lambda p_{1}'&.e_{1}')\:x)\:[] \\
+        ((\lambda p_{2}'&.e_{2}')\:x)\:[] \\
+                        &\mathrel{\makebox[\widthof{=}]{\vdots}} \\
+        ((\lambda p_{n}'&.e_{n}')\:x)\:[] \\
         Error
-\end{code}
+\end{align*}
 
 Here, $x$ is a newly introduced variable name to temporarily hold the argument
 passed to $f$. The $x$ must not be free in any $e_{n}$ in terms of free
@@ -913,7 +913,7 @@ Lets see our translation in action taking as an example the \texttt{map}
 function:
 
 \vspace*{0.2in}
-\begin{code}[style=haskell]
+\begin{code}[label=lst:map_pattern_matching,style=haskell]
 map f [] = [];
 map f (x : xs) = ((f x) : (map f xs))
 \end{code}
@@ -922,48 +922,49 @@ The result of such translation would be following:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
-map = $\lambda$f.$\lambda$xs.((($\lambda$Nil.Nil) xs) []
-              (($\lambda$(Cons y ys).(Cons (f x) (map f ys))) xs) []
-              Error
+map = \f xs. ((\(Nil.Nil) xs) []
+             ((\(Cons y ys).(Cons (f x) (map f ys))) xs) []
+             Error
 \end{code}
 
-In this example $PatternMatchingError$ will never be returned because the set
-of constructors $Nil$ and $Cons$ covers the whole domain of constructors for
-$List$ data type. It is possible however to construct an example that will cause
-that error to occur.
+In this example \texttt{Error} will never be returned because \texttt{Nil} and
+\texttt{Cons} cover the whole domain of constructors for \texttt{List} data type.  It
+is possible however to construct an example that will cause that error to
+occur.
 
 \subsection{Pattern matching algorithm}
 \label{sec:pattern_matching_algorithm}
 
 In general a multi-pattern function definition in Kivi of the form:
 
-\vspace*{0.2in}
-\begin{code}[style=haskell,mathescape=true]
-f $p_{1,1}$ $p_{1,2}$ $\ldots$ $p_{1,n}$ = $e_{1}$
-f $p_{2,1}$ $p_{2,2}$ $\ldots$ $p_{2,n}$ = $e_{2}$
-          $\vdots$
-f $p_{m,1}$ $p_{m,2}$ $\ldots$ $p_{m,n}$ = $e_{m}$
-\end{code}
+\vspace{-0.2in}
+\begin{align*}
+f\:p_{1,1}\:p_{1,2}\:&\ldots\:p_{1,n} = e_{1} \\
+f\:p_{2,1}\:p_{2,2}\:&\ldots\:p_{2,n} = e_{2} \\
+                     &\mathrel{\makebox[\widthof{\ldots}]{\vdots}} \\
+f\:p_{m,1}\:p_{m,2}\:&\ldots\:p_{m,n} = e_{m} \\
+\end{align*}
 
 is going to be translated into:
 
-\vspace*{0.2in}
-\begin{code}[style=haskell,mathescape=true]
-f = $\lambda v_{1}$.$\lambda v_{2}$ $\ldots$ $\lambda v_{n}$.(($\lambda p_{1,1}'$.$\lambda$.$p_{1,2}'$ $\ldots$ $\lambda p_{1,n}'$) $v_{1}$ $v_{2}$ $\ldots$ $v_{n}$) []
-                 (($\lambda p_{2,1}'$.$\lambda$.$p_{2,2}'$ $\ldots$ $\lambda p_{2,n}'$) $v_{1}$ $v_{2}$ $\ldots$ $v_{n}$) []
-                                 $\vdots$
-                 (($\lambda p_{m,1}'$.$\lambda$.$p_{m,2}'$ $\ldots$ $\lambda p_{m,n}'$) $v_{1}$ $v_{2}$ $\ldots$ $v_{n}$) []
-                 Error
-\end{code}
+\vspace{-0.2in}
+\begin{align*}
+f = \lambda v_{1}.\lambda v_{2}\:\ldots\:\lambda v_{n}. \\
+                ((\lambda p_{1,1}'.\lambda.p_{1,2}'\:&\ldots\:\lambda p_{1,n}')\:v_{1}\:v_{2}\:\ldots v_{n})\:[] \\
+                ((\lambda p_{2,1}'.\lambda.p_{2,2}'\:&\ldots\:\lambda p_{2,n}')\:v_{1}\:v_{2}\:\ldots\:v_{n})\:[] \\
+                                                     &\mathrel{\makebox[\widthof{\ldots}]{\vdots}} \\
+                ((\lambda p_{m,1}'.\lambda.p_{m,2}'\:&\ldots\:\lambda p_{m,n}')\:v_{1}\:v_{2}\:\ldots\:v_{n})\:[] \\
+                Error
+\end{align*}
 
-We have arrived to the point where the pattern matching algorithm starts its
-work. The goal is to translate this form into one that uses \texttt{case}
-expressions. The code responsible for this task has been placed in
-\textit{PatternMatching.hs} module and will be used as a reference. The heart
-of algorithm is formed by \texttt{match*} set of mutually recursive functions,
-specifically \texttt{matchSc} is the one that performs pattern matching on
-supercombinators, and \texttt{matchEquations} matches function definition
-equations. \texttt{matchEquations} has the following type signature:
+This is the input to pattern-matching algorithm. The goal is to translate this
+form into one that uses \texttt{case} expressions. The code responsible for
+this task has been placed in \textit{PatternMatching.hs} module and will be
+used as a reference. The heart of algorithm is formed by a set of recursive
+functions with \texttt{match} prefix. Specifically \texttt{matchSc} is the one
+that performs pattern matching on supercombinators, and \texttt{matchEquations}
+matches function definition equations. Definition of \texttt{matchEquations} is
+presented in listing below:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -986,7 +987,7 @@ where
   \item \texttt{dts}: A set of defined data types needed later in constructor
     rule (see ~\ref{sec:constructor_rule}). As shown below \texttt{DataType}
     instances consist of name and list of \texttt{Constructor} instances.
-    \texttt{Constructor}s in turn are built from name, tag and arity:
+    \texttt{Constructor}s on the other hand, are built from name, tag and arity:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -1005,13 +1006,14 @@ type Constructor = (Name, Int, Int)
 type Equation = ([Pattern], Expr Pattern)
 \end{code}
 
-\texttt{Expr Pattern} is a data type for representing expressions that contains
-patterns. It uses a parametrized type \texttt{Expr a} where the parameter
-\texttt{a} represents type that can be used as function arguments, left-hand
-sides of let(rec) bindings, etc. It was previously described in
+\texttt{Expr Pattern} is a data type representing expressions that contain
+patterns. It uses a parametrized type \texttt{Expr a}, where the parameter
+\texttt{a} stands for the type that can be used as function arguments,
+left-hand sides of let(rec) bindings, etc. It was previously described in
 Section~\ref{sec:syntax_analysis}.
-To give an example of how such expression with patterns might look like, let me
-show you this \texttt{case} expression:
+
+To give an example of how such expression with patterns might look like,
+consider the following case:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -1057,10 +1059,10 @@ applicable given the current state, is solved by looking at first elements of
 equations list. Depending on the type of currently considered equation, the
 corresponding rule is applied. Helper function \texttt{classifyEquation}
 returns the type of equation based on its first element. Following sections
-describe each rule in more detail, as well as present a few hopefully
+describe each rule in more detail, as well as present a few, hopefully
 clarifying examples.
 
-Examples in the rest of this section contains a simplified calls to
+Examples in the rest of this section contain a simplified calls to
 \texttt{matchEquations} function, where only \texttt{vs}, \texttt{eqs} and
 \texttt{def} arguments are presented. The rest of them plays rather a minor
 role in understanding the behaviour of algorithm.
@@ -1068,15 +1070,15 @@ role in understanding the behaviour of algorithm.
 
 \subsection{The Variable Rule}
 This rule applies when every equation begins with a variable pattern. In such
-case it is possible to remove that variable from every equation and also remove
-the corresponding argument variable from \texttt{vs} list. After that we should
-transform every expression corresponding to that pattern into one, where every
+case it is possible to remove that variable from every equation and also get
+rid of the corresponding argument variable from \texttt{vs} list\footnote{This
+is exactly what happened in example from
+Listing~\ref{lst:map_pattern_matching}}. After that, every expression
+corresponding to that pattern should be transformed into one, where every
 occurence of removed variable is substituted with the corresponding variable
 from \texttt{vs} list. This behaviour is implemented by \texttt{matchVar}
-function.
-Our previous example, the \texttt{map} function eventually runs into a situation
-where variable rule is applicable\footnote{This is a simplified call to
-\texttt{matchEquations} where not all arguments are present}:
+function.  Our previous example, the \texttt{map} function eventually runs into
+a situation where variable rule is applicable:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
@@ -1086,7 +1088,7 @@ matchEquations [$v_{1}$, $v_{2}$]
                Error
 \end{code}
 
-After applying the variable rule it would have such form:
+After applying the variable rule it would become:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lst:variable_rule, caption={State after applying
@@ -1099,17 +1101,18 @@ matchEquations [$v_{2}$]
 
 \subsection{The Constructor Rule}
 \label{sec:constructor_rule}
-Similarly constructor rule is applied when every equation begins with
-constructors. Equations are groupped together according to the constructor and
-a case expression is introduced in order to choose the right branch. Each group
-is now considered separately by recursive calls to \texttt{matchEquation}. New
-argument variables are added to each group \texttt{vs} variable according to
-the arity of a constructor. This logic has been implemented in
-\texttt{matchConstr} function. Again a simple example will clarify this step.
+Similarly, constructor rule is applied when each equation starts with
+constructor. Equations are arranged into groups, according to the constructor.
+Later, the case expression is introduced in order to select the right branch.
+Each group is now considered separately by recursive calls to
+\texttt{matchEquation}. New argument variables are added to each group's
+\texttt{vs} set, according to the arity of a constructor. This logic has
+been implemented in \texttt{matchConstr} function. Please refer to the example
+below to clarify this step.
 
-After applying variable rule we have reached the state presented in
-Listing~\ref{lst:variable_rule}. Here there are two constructors for two
-equations: \texttt{Nil} and \texttt{Cons} so constructor rule applies:
+After applying the variable rule the state presented in
+Listing~\ref{lst:variable_rule} is reached. There are two constructors for two
+equations: \texttt{Nil} and \texttt{Cons}, so constructor rule applies:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lst:constructor_rule, caption={State after applying
@@ -1124,29 +1127,29 @@ case $v_{2}$ of
 \end{code}
 
 \subsection{The Mixture Rule}
-The need for additional rule arises from the case when neither all equations
-begin with variable nor with constructor, hence the name - mixture rule. Here
-is an example of function that causes such situation to occur:
+The need for additional rule arises from the situation when neither all
+equations begin with variable nor with constructor, hence the name - mixture
+rule. Here is an example of function that causes such situation to occur:
 
 \vspace*{0.2in}
-\begin{code}
+\begin{code}[style=haskell]
 length (x : xs) = 1 + length xs;
 length empty = 0
 \end{code}
 
-After transforming this function we will get:
+The function after performing this transformation is presented below:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,label=lst:mixture_length, mathescape=true,
   caption={Mixture rule application.}]
 matchEquations [$v_{1}$]
                [([Cons x xs], 1 + length xs),
-                ([Nil], 0)]
+                ([empty], 0)]
 \end{code}
 
 When such situation occurs, pattern matching algorithm partitions the set of
 equations into subsets in a way that each partition contains only elements of
-the same type, i.e. In each partition there are only elements that are either
+the same type, i.e. in each partition there are only elements that are either
 constructors or variables or numbers, etc. This logic is implemented by
 \texttt{partition} function in \textit{Utils.hs} module. Once the partitioning
 is done it is easy to work out other details. The \texttt{matchEquations} call
@@ -1157,16 +1160,16 @@ from Listing~\ref{lst:mixture_length} is equivalent to following one:
 matchEquations [$v_{1}$]
                [([Cons x xs], 1 + length xs)]
                (matchEquations [$v_{1}$]
-                               [([Nil], 0)]
+                               [([empty], 0)]
                                Error)
 \end{code}
 
-After evaluating each of the \texttt{matchEquations} calls the length function
-will look like this:
+After evaluating each of the \texttt{matchEquations} calls, the length function
+will look like below:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
-length = $\lambda v_{1}$
+length = \$v_{1}$ .
     case $v_{1}$ of
         Cons $v_{1}$ $v_{2}$ -> 1 + length $v_{2}$
         Nil       -> 0
@@ -1186,21 +1189,21 @@ When algorithm arrives into such state, the result is equal to \texttt{expr}.
 
 \subsubsection{Summary}
 According to the rules above one can transform every pattern-matching lambda
-abstraction to a corresponding (and semantically identical) \texttt{case}
-expression. This follows directly from the description of rules.
+abstraction to a corresponding (and semantically identical) case expression.
+This follows directly from the description of rules.
 
 \section{Transforming let(rec) expressions}
 \label{sec:letrec_transform}
-The reason why we need to perform let(rec) transformations is due to the fact
-that letrec binders\footnote{Binders of a let(rec) expressions are the
-left-hand sides of each definition} might contain arbitrary patterns in them.
-This prevents us from using the machinery that would be used instead, if those
-binders were allowed to be simple variables only. This section is dedicated to
-show how the transformation from enriched version of let and letrec bindings to
-a simple lambda calculus work in Kivi. Code implementing functionalities from
-this section has been placed in \textit{LetTransformer.hs} module.
+The reason why the requirement to perform let(rec) transformation arises, is
+the fact that letrec binders\footnote{Binders of a let(rec) expressions are the
+left-hand sides of each definition} might contain arbitrary patterns. This
+prevents, from using the machinery that would be exploited, if those binders were
+allowed to be simple variables only. This section is dedicated to show, how the
+transformation from enriched version of let and letrec bindings to a simple
+lambda calculus work. Code implementing logic described in this section has
+been placed in \textit{LetTransformer.hs} module.
 
-The rest of this chapter is devoted to presentation of transformations which
+The rest of this chapter is devoted to presentation of transformations, that
 translate a program into one, in which only \textit{simple let(rec)}s are
 present. Simple let(rec)s are such, that their binders contain only patterns
 that are either variable patterns or simple patterns(numbers, characters,
@@ -1209,7 +1212,7 @@ strings, etc.).
 The first step of this process is to perform a \textit{conformality
 transformation} described in Section~\ref{sec:conformality_transformation}.
 Later, general let expressions, are converted into simple lets via irrefutable
-lets, obtained by previous transformation. On the other hand general letrecs
+lets, obtained by previous transformation. On the other hand, general letrecs
 are first transformed into irrefutable letrecs and finally into simple letrecs.
 This process is shown in Figure~\ref{fig:letrec_transform}:
 
@@ -1222,8 +1225,9 @@ This process is shown in Figure~\ref{fig:letrec_transform}:
 
 \subsection{Refutable and irrefutable patterns.}
 \label{sec:irrefutable_patterns}
-We can distinguish two different types of let(rec) bindings: \textit{Refutable}
-and \textit{irrefutable} ones. Lets look at this sample let expression:
+Two different kinds of let(rec) bindings can be distinguished:
+\textit{Refutable} and \textit{irrefutable} ones. Consider the let expression
+below:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true,label=lst:conformality_check,caption={Pattern matching let binding.}]
@@ -1232,11 +1236,11 @@ let (Cons x xs) = $expr$ in ...
 
 The problem arises because \texttt{expr} might be evaluated to \texttt{Nil},
 and in such situation this pattern matching will fail. This is precisely the
-characteristic that distinguishes between the two aforementioned types of
-let(rec) bindings. In short refutable bindings are those which contain
-at least one refutable pattern and thus may fail during evaluation. On the
-other hand irrefutable ones are those in which a failure cannot occur, thus
-when all patterns are irrefutable.
+characteristic that describes the difference between the two aforementioned
+types of let(rec) bindings. In short, refutable bindings are those which contain
+at least one refutable pattern and thus, may fail during evaluation. On the
+other hand, irrefutable ones are those where a failure cannot occur, i.e. when
+all patterns are irrefutable.
 
 \begin{definition}
   \label{def:irrefutable_pattern}
@@ -1248,33 +1252,33 @@ when all patterns are irrefutable.
       constructor and $p_{1}$ $p_{2}$ \ldots $p_{n}$ are irrefutable patterns
   \end{itemize}
 \end{definition}
-The function \texttt{isRefutable} is implemented in exactly this fashion.
+The function \texttt{isRefutable} implements this behaviour.
 
 \subsection{Conformality transformation}
 \label{sec:conformality_transformation}
 A \textit{conformality transformation} is an activity to translate the program
-into one that checks for patterns mismatch in let(rec) bindings. It
-will contain only irrefutable let(rec) bindings. We say that such
-program performs a \textit{conformality check}. Lets also mention that such
-transformation is only needed in case of refutable bindings, so there is no need
-to perform this, possibly expensive, computation in when patterns cannot fail.
-So the first step of conformality transformation is partitioning
-let(rec) bindings regarding to their refutability. Once we have all
-patterns that might fail in one place we need to find a way to transform
-let(rec)s into a form that conformality check is done.  Considering
-our running example from Listing~\ref{lst:conformality_check} our compiler
-would transform this expression into:
+into one that perform checks for mismatching patterns in let(rec) bindings.
+After applying this conversion, the program will contain only irrefutable
+let(rec) bindings. Such program is said to perform a \textit{conformality
+check}. It is important to mention, that such transformation is only needed in
+case of refutable bindings. There is no point in applying this conversion when
+patterns cannot fail, especially that it might be computationally expensive.
+The first step of conformality transformation is partitioning let(rec) bindings
+according to their refutability. Once all patterns that might fail are
+gathered, the transformation can take place. Considering our running example
+from Listing~\ref{lst:conformality_check} our compiler would convert this
+expression into:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
 let (Cons x xs) = let $v_{1}$ = $expr$
-                  in (($\lambda$p.(Cons x xs)) $v_{1}$) [] Error
+                  in ((\p.(Cons x xs)) $v_{1}$) [] Error
 \end{code}
 
 where $v_{1}$ is newly introduced unique variable.
 
-Based on that observation we could derive the general form of conformality
-transformation from:
+With this observation in mind, it becomes feasible to derive the general form
+of conformality transformation. Thus expression in form:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
@@ -1285,16 +1289,16 @@ let $p_{1}$ = $e_{1}$;
 in $\ldots$
 \end{code}
 
-into:
+will be converted into:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
 let
     ($c_{k1}$ $v_{1,1}$ $\ldots$ $v_{1,k1}$) = let $w_{1}$ = $e_{1}$
-                      in (($\lambda p_{1}$.($c_{k1}$ $v_{1,1}$ $\ldots$ $v_{1,k1}$)) $w_{1}$) [] Error
+                      in ((\$p_{1}$.($c_{k1}$ $v_{1,1}$ $\ldots$ $v_{1,k1}$)) $w_{1}$) [] Error
                                $\vdots$
     ($c_{kn}$ $v_{n,1}$ $\ldots$ $v_{n,kn}$) = let $w_{n}$ = $e_{n}$
-                      in (($\lambda p_{n}$.($c_{kn}$ $v_{n,1}$ $\ldots$ $v_{n,kn}$)) $w_{n}$) [] Error
+                      in ((\$p_{n}$.($c_{kn}$ $v_{n,1}$ $\ldots$ $v_{n,kn}$)) $w_{n}$) [] Error
 in $\ldots$
 \end{code}
 
@@ -1305,9 +1309,9 @@ where:
   \item $\{v_1, v_2, \ldots, v_n\} = Var(p_i)$
   \item $w_{i}$ is distinct from every $v \in Var(p_i)$
 \end{itemize}
-The function which calculates the $Var(p_i)$ set is called
-\texttt{getPatternVarNames} and its behaviour is works by collecting already
-seen variable names while recursively traversing the pattern:
+The function that calculates the $Var(p_i)$ set is called
+\texttt{getPatternVarNames} and its role is to collect the already seen
+variable names while recursively traversing the pattern:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -1320,18 +1324,18 @@ getPatternVarNames (PConstr tag arity patterns) = foldl collectVars [] patterns
         collectVars vars pattern = vars ++ getPatternVarNames pattern
 \end{code}
 
-The implementation of conformality transformation can be found in
+The implementation of the the full conformality transformation can be found in
 \texttt{conformalityTransform} in \textit{LetTransformer.hs}.
 
 \subsection{Transforming irrefutable lets into simple lets}
-As previously mentioned irrefutable let is such that contain only
-irrefutable patterns as binders. There are three cases in which we consider a
-pattern irrefutable according to Definition~\ref{def:irrefutable_pattern}. In
-the first two patterns on the left-had side of definition might be either
-variable or simple patterns(numbers, characters, etc.). In such case these
-patterns are already simple, so there is nothing else to do. On the other hand
-when patterns are irrefutable constructor patterns they are take the following
-form:
+As previously mentioned, an irrefutable let contains only binders, that are
+irrefutable. There are three cases in which a pattern is considered
+irrefutable, according to Definition~\ref{def:irrefutable_pattern}. In the
+first two, patterns on the left-hand side of definition might be variable or
+simple patterns(numbers, characters, etc.) only. In this situation these
+patterns are already simple, so there is nothing else to transform. On the
+other hand, when patterns are irrefutable constructor patterns, they are of the
+following form:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
@@ -1339,10 +1343,10 @@ form:
 \end{code}
 
 where each $p_1, p_2, \ldots, p_n$ are irrefutable patterns. In order to
-convert such expression into a simple let, we can apply the following
-transformation\footnote{Without loss of generality we can assume that each
-let contains only one definition. Every program could be easily
-transformed to conform to this condition.}:
+convert such expression into a simple let, the following transformation needs
+to be applied\footnote{Without loss of generality, it can be assumed that each
+let contains only one definition. Every program could easily be transformed to
+satisfy this condition.}:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
@@ -1357,14 +1361,14 @@ in (let $p_1$ = $Select\mbox{-}r\mbox{-}1$ $v$;
 Here, $v$ is a newly introduced variable, $r$ is the arity of the $c$
 constructor, whereas each $Select\mbox{-}r\mbox{-}i$ is a function that selects
 the $i^{th}$ component of a constructor with arity $r$. Again a simple example
-should clarify this:
+should clarify the details:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
 let (Cons x xs) = (Cons 1 (Cons 2 (Cons 3 Nil)))
 \end{code}
 
-after applying the aforementioned transformation will be converted into:
+After applying the aforementioned transformation it will be converted into:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
@@ -1378,11 +1382,10 @@ Nil)))} will yield \texttt{1}, and $Select\mbox{-}2\mbox{-}2$ is going to return
 \texttt{Cons 2 (Cons 3 Nil)}.
 
 \subsection{Transforming irrefutable letrecs into simple letrecs}
-Transformation from irrefutable letrecs into simple ones is almost
-identical to that concerning lets except from the fact that variables
-from all definitions should be groupped together in order to ensure that
-they are visible from other bindings. Here is the general scheme for such
-conversion:
+Transformation from irrefutable letrecs into simple ones is almost identical to
+that concerning lets, except from the fact that variables from all definitions
+should be arranged into groups, in order to ensure that they are in other
+bindings' scope. Below, the general scheme for such conversion is shown:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell,mathescape=true]
@@ -1415,13 +1418,13 @@ in $expr$
 \end{code}
 
 \subsection{Summary}
-After all these transformations took place, all binders in every
-let(rec) expressions should become variable pattern in form
-\texttt{PVar v = $expr$} or simple pattern. Now the pattern-matching algorithm,
-described in Section~\ref{sec:pattern_matching_algorithm} can be used because
-it was developed under assumption that left-hand sides of let(rec)
-binders does not contain refutable and complex patterns. Therefore it is
-important to run the conformality transform before pattern matching phase.
+Once all these transformations took place, every binder in every let(rec)
+expression should become either a variable pattern in form \texttt{PVar v =
+$expr$} or a simple pattern. Now the pattern-matching algorithm, described in
+Section~\ref{sec:pattern_matching_algorithm} can be used, for it was developed
+under assumption that left-hand sides of let(rec) binders does not contain
+refutable and complex patterns. Therefore it is of particular importance, to
+run the conformality transform before pattern matching phase.
 
 %\section{Transforming case expressions}
 
@@ -1429,18 +1432,18 @@ important to run the conformality transform before pattern matching phase.
 \label{sec:lambda_lifting}
 This section provides a description of how lambda abstractions are implemented
 in Kivi. Lambda abstractions are more commonly known as \textit{local function}
-or \textit{anonymous function} definitions concepts from imperative languages.
-As previosly I am going to describe a program transformation, which when
-applied, converts the program into a form where lambda abstracions become
+or \textit{anonymous function} definitions from imperative languages. As
+previously, I am going to describe a program transformation, which when
+applied, converts the program into a form, where lambda abstracions become
 global supercombinators. This transformation is known as \textit{lambda
 lifting} or \textit{closure conversion}. The reader is encouraged to read the
-Chapter 6 in \cite{JonLes00}, as well as Chapter 13 in \cite{Jon87} to
-get additional information on this subject.
+Chapter 6 in \cite{JonLes00}, as well as Chapter 13 in \cite{Jon87} to get
+additional information on this subject.
 
 For the purpose of our \textit{lambda lifter} described here, I am going to
 introduce the annotated version of Abstract Syntax Tree, that is capable of
 carrying additional information needed for transformations described in this
-chapter. The type that implements this was called \texttt{AnnExpr} and has
+chapter. The type that implements it was called \texttt{AnnExpr} and has
 been placed in \textit{LambdaLifter.hs}. Its full definition is following:
 
 \vspace*{0.2in}
@@ -1479,7 +1482,7 @@ Lambda lifting is a way of eliminate free variables from local function
 definitions. The elimination of free variables allows the compiler to hoist
 lambda abstractions out of their surrounding contexts into a fixed set of
 top-level supercombinators with extra parameter for each free variable. As an
-example of this we will analyse the following Kivi function that multiplies two
+example of this, consider the following Kivi function that multiplies two
 integers without using the multiplication operator (in a rather not the most
 optimal fashion)
 
@@ -1525,8 +1528,8 @@ implemented in Kivi. The source file to look for implementation details, is
 
 \subsection{Annotating expressions with free variables}
 The first phase of an algorithm is to annotate each Abstract Syntax Tree
-expression with free variable occurencs contained in it. As we can see in the
-type signature for function \texttt{freeVars} it transforms a list of
+expression with free variable occurencs contained in it. As it can be noticed,
+in the type signature for function \texttt{freeVars}, it transforms a list of
 supercombinator definitions into the similar list\footnote{\texttt{AnnProgram}
 type, according to Listing~\ref{lst:annotated_expression}, is just the list of
 annotated supercombinator definitions}:
@@ -1619,18 +1622,18 @@ renameExpr newNamesFun mapping ns (EVar v) =
 Here, \texttt{mapping} is an instance of a \texttt{NameSupply} type. It is used
 to carry around an information about already used names in form of map between
 old variable name to new variable name. If currently considered variable is
-already present in a map, it means that we should use the name saved there.
+already present in a map, it means that this name should be used instead.
 
 As a result \texttt{renameGen} and \texttt{rename} return supercombinators with
 each variable name being unique.
 
 \subsection{Collecting supercombinators}
-Finally, in the last step, we can perform the 'lift part' of lambda lifting
-algorithm. In this pass the supercombinators introduced earlier are collected
-and raised to the top level.  Regarding source code, the only complicated bit
-is in the \texttt{collectExpr} function when collecting supercombinators from
-let(rec) expressions.  There are three possibilities where we should
-collect supercombinators from:
+Finally, in the last step, the \textit{lift part}  of lambda lifting algorithm
+can be performed. In this pass the supercombinators introduced earlier are
+collected and raised to the top level.  Regarding source code, the only
+complicated bit is in the \texttt{collectExpr} function when collecting
+supercombinators from let(rec) expressions. There are three possibilities
+where supercombinators need to be collected:
 
 \begin{itemize}
   \item Firstly, supercombinators might be nested in let(rec)
@@ -1640,11 +1643,11 @@ collect supercombinators from:
     bindings as $sc$ \texttt{=} $\lambda v_1$ $\ldots$ $v_n$ . $expr$.
     Therefore what Kivi does, is splitting the list of bindings into ones that
     are simple variable bindings and supercombinators.
-  \item The third and the last possibility is when supercombinators are nested
-    in the right-hand side of binding. Then we should extract them by means of
-    calling the \texttt{collectExpr} on the right-hand side of binding
-    definition. This is implemented by folding over bindings with
-    \texttt{collectDef}.
+  \item The third and the last possibility occurs when supercombinators are
+    nested in the right-hand side of binding. In this case, they should be
+    extracted by calling the \texttt{collectExpr} with the right-hand side of
+    binding definition as an argument. This is implemented by folding over
+    bindings with \texttt{collectDef}.
 \end{itemize}
 
 \section{Full laziness}
@@ -1793,9 +1796,9 @@ for a regular lambda lifter in Section~\ref{sec:lambda_lifting}. Once it is
 done, level of each lambda or let bound variable $v$ can be calculated by
 finding the innermost lambda that binds any of $v$'s free variables. The
 \texttt{annotateLevels} function works in exactly this way and returns an
-instance of \texttt{AnnProgram (Name, Level) Level} type. As we recall the
-\texttt{AnnExpr} definition from Section~\ref{sec:lambda_lifting}, it means
-that each binder and each expression are now associated the appropriate levels:
+instance of \texttt{AnnProgram (Name, Level) Level} type. With \texttt{AnnExpr}
+definition from Section~\ref{sec:lambda_lifting} in mind, it means that each
+binder and each expression are now associated the appropriate levels:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -1803,7 +1806,7 @@ annotateLevels :: [CoreScDefn] -> AnnProgram (Name, Level) Level
 annotateLevels = freeToLevel . freeVars
 \end{code}
 
-First interesting case arises when analysing lambda abstractions. Level of
+First interesting case arises when analyzing lambda abstractions. Level of
 lambda abstraction is calculated by \texttt{freeSetToLevel} that takes a
 mapping between names and levels as well as free variables set and returns the
 maximum of levels of all variables in the set:
@@ -1818,7 +1821,8 @@ freeSetToLevel env free =
 \end{code}
 
 Because each lambda-bound variable's level is the number of lambdas enclosing
-it, we can simply set it to the level of its context incremented by one.
+it, the level of current lambda can be set to the level of its context
+incremented by one.
 
 Another case that demands more care arises when calculating the levels of
 let(rec) bindings. Here, the level of let(rec) is set to level of let(rec)'s
@@ -1829,10 +1833,10 @@ occuring on right-hand-side of any binder.
 Next phase consists of identification and transformation of found MFEs.
 Implementation is rather straightforward. Function \texttt{identifyMFEsExpr}
 compares the levels of enclosing context with level of current expression. If
-they differ it means that we have found an MFE. After this check, function is
-recursively applied to subexpressions. One thing to be mentioned however, is
-the fact that there is no need to mark simple expressions, such as variables or
-constant values, as MFEs in order to avoid clutter.
+they differ, an MFE was found. After this check, function is recursively
+applied to subexpressions. One thing to be mentioned however, is the fact that
+there is no need to mark simple expressions, such as variables or constant
+values, as MFEs in order to avoid clutter.
 
 \subsubsection{Renaming variables}
 Rename pass takes place after identifying MFEs to rename all binders. This
@@ -1843,8 +1847,8 @@ Section~\ref{sec:lambda_lifting}).
 
 \subsubsection{Merging lambda abstractions}
 This phase is the opposite of separating lambda abstractions performed at the
-beginning. Here we merge the directly nested lambda abstractions into one that
-binds all the arguments.
+beginning. Here, the directly nested lambda abstractions are merged into one,
+that binds all arguments.
 
 \subsubsection{Floating let(rec)s}
 The final pass lifts let(rec)s to appropriate levels. Each expression is
@@ -1896,7 +1900,7 @@ where possible. The reason for this choice is because the non-recursive version
 of binding can be implemented more efficiently. The fact that let(rec)
 expressions are not always as optimal as they could, is twofold:
 \begin{itemize}
-  \item First, programmer might have ommited the fact that the
+  \item First, programmer might have omitted the fact that the
     let(rec) expression he implemented is not recursive at all.
   \item Previous phases\footnote{as well as passes that are not yet available
     in Kivi} might be unnecesarily pessimistic, for example where
@@ -1919,7 +1923,7 @@ in
     gcd res 3
 \end{code}
 
-After analysing the dependencies and splitting the letrec into minimal
+After analyzing the dependencies and splitting the letrec into minimal
 subgroups the expression will become:
 
 \vspace*{0.2in}
@@ -1984,8 +1988,8 @@ build for our example from Listing~\ref{lst:letrec_dependency_example}:
 \end{figure}
 
 \subsubsection{Strongly Connected Components}
-Next in order to group variables that depend on each other into one letrec
-binding, we have to determine which variables are mutually recursive. This is
+Next, in order to group variables that depend on each other into one letrec
+binding, it needs to be determined, which variables are mutually recursive. This is
 done by calculating the \textit{strongly connected components} (or
 \textit{SCC}) of a dependency graph. To gain a deep insight into analysis of an
 algorithm, see \cite{Cormen03}. Definition of strongly connected components can
@@ -2045,8 +2049,8 @@ Next, \texttt{scc} function is invoked in order to find strongly connected
 components of dependency graph. It does so by first computing, for each vertex
 $x$, the set of vertices accessible (directly or indirectly) from that vertex
 using forward edges, as well as sets of vertices accessible using backward
-edges. By computing the intersection of these sets, we can effectively get
-component of vertex $x$:
+edges. By computing the intersection of these sets, it calculates the component
+of vertex $x$:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -2145,7 +2149,7 @@ On the other hand if at least two constraints cannot be unified to a common
 type, it means that algorithm is incapable of devising a correct typing for an
 expression. As an example consider the following function
 definition\footnote{The case when \texttt{head} is given an empty list is
-ommitted in order to reduce verbosity.}:
+omitted in order to reduce verbosity.}:
 
 \vspace*{0.2in}
 \begin{code}[style=haskell]
@@ -2162,12 +2166,12 @@ well as its return type. This serves as initial set of constraints:
   head :: $\gamma \rightarrow \delta$
 \end{code}
 
-From the set of built-in constraints we know that \texttt{:} is a cons operator
-of type $\epsilon \rightarrow [\epsilon]$ so we can unify $\gamma$ to
-$[\epsilon]$. Therefore we know that \texttt{head} takes list as an argument.
-Also because of that we can unify $\alpha$ and $\beta$, the types for
-\texttt{x} and \texttt{xs} variables, with respectively $\epsilon$ and
-$[\epsilon]$:
+The set of built-in constraints defines the \texttt{:}, a cons operator, to
+have the type $\epsilon \rightarrow [\epsilon]$, so it is possible to unify
+$\gamma$ to $[\epsilon]$. Therefore it is obvious, that \texttt{head} takes
+list as an argument. Also because of that, $\alpha$ and $\beta$, the types for
+\texttt{x} and \texttt{xs} variables, can be unified with respectively
+$\epsilon$ and $[\epsilon]$:
 
 \vspace*{0.2in}
 \begin{code}[mathescape=true,style=haskell]
@@ -2195,7 +2199,7 @@ above, standing for function types. Complex type operators take other types as
 arguments.
 
 \vspace*{0.2in}
-\begin{code}
+\begin{code}[style=haskell]
 data TypeExpr = TypeVar TypeVarName (Maybe TypeExpr)
               | TypeOp String [TypeExpr]
 \end{code}
@@ -2221,8 +2225,8 @@ The above definition means that different occurrences of a generic type
 variable in a type expression may be instantiated to different types. It can be
 implemented by simply performing a deep-copy of the type variables and making
 the non-generic ones shared between instances. In order to determine whether
-the variable is generic during run-time of an algorithm, we can just check if
-\texttt{nonGeneric} set contains it.
+the variable $v$ is generic during run-time of an algorithm, a simple check can be
+performed, to find out if the \texttt{nonGeneric} set contains $v$.
 
 \subsubsection{Supercombinators}
 Type checking is performed for each supercombinator. First each variable
@@ -2249,7 +2253,7 @@ In order to type-check let expressions, first type-checking of
 bindings introduced by let takes place, obtaining an updated
 environment, \texttt{typeInstanceEnv}. Body of let will by checked
 using this fresh environment. The situation changes a bit in case of recursive
-let expressions. Before analysing each definition it is necessary to
+let expressions. Before analyzing each definition it is necessary to
 first assign a new type variable to each bound variable, creating an updated
 environment. Once the new environment is available, types are checked for each
 definition body as well as the body of a whole letrec in the end.
@@ -2281,8 +2285,8 @@ from it, should remain simple as well. Thus, translating the original source
 code first into the G-code and later to the machine of our choice shall be much
 simpler than doing it in a straight-forward manner. The third argument for
 preferring having intermediate representation over a concrete one is that it
-will give us the ability to create virtual machine interpreters or compilers
-for any particular computer architecture we desire, by means of only switching
+will give, the ability to create virtual machine interpreters or compilers
+for any particular computer architecture, by means of only switching
 the code generator. Code generators will then need to transform the
 intermediate language into machine code of that machine. This will greatly
 simplify the development of such tools, because the issues of compiling
@@ -2302,11 +2306,11 @@ implementations of the G-machine:
 \section{Graph reduction}
 \label{sec:graph_reduction}
 As previously stated the output of a syntax analyser is an Abstract Syntax
-Tree. In above chapters we have applied a several transformations the the tree
-so as to either allow special constructs like lambda abstractions or to
-translate the source of the program to enriched lambda calculus. Eventually the
-output of these transformations is still AST. \textit{Graph reduction} is an
-implementation of efficient, non-strict supercombinator evaluation strategy.
+Tree. In above chapters, a several transformations has been applied to the
+tree, in order to either compile special constructs like lambda abstractions or
+to translate the source of the program to enriched lambda calculus. Eventually
+the output of these transformations is still AST. \textit{Graph reduction} is
+an implementation of efficient, non-strict supercombinator evaluation strategy.
 Non-strictness in this context means that function arguments are evaluated on
 demand. This is also known as \textit{lazy evaluation}. Another feature of
 G-machine implementation is that values should only be evaluated once, in order
@@ -2344,7 +2348,7 @@ In Kivi reduction starts by evaluating the body of \texttt{main}
 supercombinator. The process of reduction consist of transforming a graph
 according to the specified rules and eventually arriving to the state where it
 cannot be reduced any more. Such state is called \textit{weak head normal form}
-(or WHNF for short). We assume that an expression is in the WHNF in several
+(or WHNF for short). It is assumed, that an expression is in the WHNF in several
 cases. First of all, when it is a number, character, or any other simple data
 type it is considered to be in WHNF. Another situation where there is nothing
 more to reduce is if the expression is in ($f$ $e_1$ $e_2$ $\ldots$ $e_n$)
@@ -2362,8 +2366,8 @@ The process of evaluation can be described in four points:
 
 \subsection{Finding next redex}
 The first step is to find the node of a graph where to perform the next
-reduction. As already mentioned, among all such nodes we will be looking for the
-outermost one. The most straight-forward way to find it, is to follow the left
+reduction. As already mentioned, among all such nodes, the outermost one is
+selected. The most straightforward way to find it, is to follow the left
 branches of application nodes (as shown in Figure~\ref{fig:application_node})
 saving the traversed node addresses on the runtime stack. There are two cases
 when this process stops, either when the supercombinator or built-in function
@@ -2380,15 +2384,15 @@ case, algorithm returns, as such application appears to be a \textit{partial
 application} forming a closure. On the other hand, if the number of arguments
 on the stack is greater or equal to the expected number the process continues.
 The arguments to a supercombinator consist of a set of right children of
-application nodes that we have visited during traversal\footnote{At this step,
+application nodes that has been visited during traversal\footnote{At this step,
 the \textit{rearrangement} of arguments takes place. This activity will be
 described in next chapters, but it is just an optimization so I am not going to
 introduce it right now, not to make unnecessary complications.}. The addresses
 that form the stack, are called \textit{spine} of the expression, and the
 process of following the left branches of application nodes is commonly known
 as \textit{unwinding} the spine. The reduction of a supercombinator can be
-looked at, as instantiating a supercombinator body with arguments substituted
-for formal parameters (as defined in Section 2.1.4 of \cite{JonLes00}).
+seen as instantiating supercombinator's body, where formal parameters are
+substituted for arguments (as defined in Section 2.1.4 of \cite{JonLes00}).
 
 \subsubsection{Reducing built-ins}
 It might be the case however that the outermost redex found is not a
@@ -2427,14 +2431,14 @@ in a WHNF, so the process continues.
 When reduction is complete, there is a need to save results of our
 computations. This is called \textit{updating} the root of redex. Important
 thing to notice is that if the redex is shared between two nodes of our graph,
-the evaluation should be done only once. In order to achieve this we have to
-introduce a new node type called \textit{indirection node}. Otherwise the
-reduced node (result of computations) will have to be copied to the root of
-the redex. In case of that node not being fully evaluated it brings a risk of
-performing computations multiple times. Indirection nodes work like a pointer
-to other node, effectively making the machine to use the values computed last
-time redex was reduced. This will prevent it from performing the same
-calculations more than once.
+the evaluation should be done only once. There is a need to introduce a new
+node type, called \textit{indirection node} in order to achieve this.
+Otherwise, the reduced node (result of computations) will have to be copied to
+the root of the redex. In case of that node not being fully evaluated it brings
+a risk of performing computations multiple times. Indirection nodes work like a
+pointer to other node, effectively making the machine to use the values
+computed last time redex was reduced. This will prevent it from performing the
+same calculations more than once.
 
 %\subsection{Evaluation Example}
 %Example of evaluating expression (TODO: example expression) is presented
@@ -2719,9 +2723,9 @@ push n state =
         stack = getStack state
 \end{code}
 
-Assuming that for each
-instruction there exists a unique transformation producing an updated state,
-this gives us a picture of fully deterministic finite automaton.
+The picture of fully deterministic finite automaton emerges, taking under
+assumption that for each instruction there exists only a unique transformation
+producing an updated state.
 
 The reader is advised to refer to \cite{Jon87} and \cite{JonLes00} for full
 description of every transition.
@@ -2861,7 +2865,7 @@ On the other hand data part of node cell contain fields that carry the nodes'
 payload. Both tag and each field occupy 8 bytes of memory. It might seem
 wasteful to allocate 8 bytes for tag, when there are only few of them possible,
 but in the end it made the implementation simpler due to uniform layout of
-cells. As an example we can consider the application node. It contains the tag
+cells. As an example, consider the application node. It contains the tag
 field with the value of 2 inside (defined by \texttt{@AP\_TAG}), as well as
 addresses of two other nodes in the graph, representing function and argument.
 
